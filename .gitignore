@@ -1,0 +1,7 @@
+*.nii 
+*.nii.gz 
+*.dcm 
+*.zip 
+*.joblib 
+__pycache__/ 
+*.pyc 
