@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 DATASET_DIR = Path(
-    r"C:\Users\smk28\Downloads\DATASET1\data"
+    r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
 )
 
 TRAJECTORY_FILE = DATASET_DIR / "tumor_trajectory.csv"

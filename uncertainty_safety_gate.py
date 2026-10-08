@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 INPUT_FILE = Path(
-    r"C:\Users\smk28\Downloads\DATASET1\data\respiratory_heldout_test_results.csv"
+    r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\respiratory_heldout_test_results.csv"
 )
 
 OUTPUT_FILE = INPUT_FILE.parent / "uncertainty_safety_gate_results.csv"

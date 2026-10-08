@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-DATA = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
+DATA = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
 PROJECT = Path(r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT")
 
 FILES = {

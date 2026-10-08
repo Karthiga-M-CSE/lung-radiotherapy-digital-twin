@@ -9,7 +9,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 DATASET_DIR = Path(
-    r"C:\Users\smk28\Downloads\DATASET1\data"
+    r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
 )
 
 INPUT_FILE = DATASET_DIR / "tumor_motion_with_rpm.csv"

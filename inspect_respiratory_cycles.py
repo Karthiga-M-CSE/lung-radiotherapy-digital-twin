@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
-RPM_FILE = r"C:\Users\smk28\Downloads\DATASET1\data\rpm_signal.txt"
+RPM_FILE = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\rpm_signal.txt"
 
 rpm = np.loadtxt(RPM_FILE)
 
@@ -76,7 +76,7 @@ if len(cycle_df) >= 10:
     print("\nIMPORTANT:")
     print("The model must NEVER be fitted using the test-cycle data.")
 
-OUTPUT = r"C:\Users\smk28\Downloads\DATASET1\data\respiratory_cycle_boundaries.csv"
+OUTPUT = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\respiratory_cycle_boundaries.csv"
 
 cycle_df.to_csv(OUTPUT, index=False)
 

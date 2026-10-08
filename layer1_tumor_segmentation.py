@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 
-DATA_DIR = r"C:\Users\smk28\Downloads\DATASET1\data"
+DATA_DIR = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
 
 VOLUME_DIR = os.path.join(DATA_DIR, "volumes")
 MASK_DIR = os.path.join(DATA_DIR, "tumor_masks")

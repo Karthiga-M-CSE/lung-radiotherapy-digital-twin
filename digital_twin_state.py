@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 
-prediction_file = r"C:\Users\smk28\Downloads\DATASET1\data\respiratory_heldout_test_results.csv"
+prediction_file = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\respiratory_heldout_test_results.csv"
 
-safety_gate_file = r"C:\Users\smk28\Downloads\DATASET1\data\uncertainty_safety_gate_results.csv"
+safety_gate_file = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\uncertainty_safety_gate_results.csv"
 
 output_file = r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT\digital_twin_state.csv"
 

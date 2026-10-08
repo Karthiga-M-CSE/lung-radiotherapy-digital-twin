@@ -2,7 +2,7 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-DATASET_DIR = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
+DATASET_DIR = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
 
 mask_path = DATASET_DIR / "tumor_masks" / "tumormask_0.nii.gz"
 mask_img = nib.load(str(mask_path))

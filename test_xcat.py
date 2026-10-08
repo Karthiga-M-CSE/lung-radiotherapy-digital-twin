@@ -1,6 +1,6 @@
 from pathlib import Path
 
-DATASET_DIR = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
+DATASET_DIR = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
 
 print("Dataset exists:", DATASET_DIR.exists())
 

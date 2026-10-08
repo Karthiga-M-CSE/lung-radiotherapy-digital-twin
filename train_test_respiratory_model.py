@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 
-DATA_DIR = r"C:\Users\smk28\Downloads\DATASET1\data"
+DATA_DIR = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
 PROJECT_DIR = r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT"
 
 INPUT_FILE = os.path.join(

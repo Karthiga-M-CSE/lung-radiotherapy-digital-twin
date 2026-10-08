@@ -4,7 +4,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
-DATASET_DIR = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
+DATASET_DIR = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
 MASK_DIR = DATASET_DIR / "tumor_masks"
 
 OUTPUT_FILE = DATASET_DIR / "tumor_trajectory.csv"

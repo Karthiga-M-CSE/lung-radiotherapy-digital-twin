@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 PROJECT = r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT"
-DATA = r"C:\Users\smk28\Downloads\DATASET1\data"
+DATA = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
 
 FILES = {
     "segmentation": os.path.join(

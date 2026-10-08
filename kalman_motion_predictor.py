@@ -2,8 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 
-INPUT_FILE = r"C:\Users\smk28\Downloads\DATASET1\data\tumor_motion_with_rpm.csv"
-OUTPUT_FILE = r"C:\Users\smk28\Downloads\DATASET1\data\kalman_prediction_results.csv"
+INPUT_FILE = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\tumor_motion_with_rpm.csv"
+OUTPUT_FILE = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\kalman_prediction_results.csv"
 
 df = pd.read_csv(INPUT_FILE)
 

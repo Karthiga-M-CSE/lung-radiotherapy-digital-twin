@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
-DATA_DIR = r"C:\Users\smk28\Downloads\DATASET1\data"
+DATA_DIR = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
 
 MOTION_FILE = os.path.join(
     DATA_DIR,
