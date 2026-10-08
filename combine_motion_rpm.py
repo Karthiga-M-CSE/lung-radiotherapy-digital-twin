@@ -4,11 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
-# ============================================================
-# PATHS
-# ============================================================
-
 DATASET_DIR = Path(
     r"C:\Users\smk28\Downloads\DATASET1\data"
 )
@@ -18,11 +13,6 @@ TRAJECTORY_FILE = DATASET_DIR / "tumor_trajectory.csv"
 RPM_FILE = DATASET_DIR / "rpm_signal.txt"
 
 OUTPUT_FILE = DATASET_DIR / "tumor_motion_with_rpm.csv"
-
-
-# ============================================================
-# CHECK FILES
-# ============================================================
 
 if not TRAJECTORY_FILE.exists():
     raise FileNotFoundError(
@@ -34,11 +24,6 @@ if not RPM_FILE.exists():
         f"RPM signal file not found:\n{RPM_FILE}"
     )
 
-
-# ============================================================
-# LOAD TRAJECTORY
-# ============================================================
-
 trajectory = pd.read_csv(TRAJECTORY_FILE)
 
 print("=" * 60)
@@ -47,19 +32,9 @@ print("=" * 60)
 
 print(f"\nTrajectory rows: {len(trajectory)}")
 
-
-# ============================================================
-# LOAD RESPIRATORY SIGNAL
-# ============================================================
-
 rpm = np.loadtxt(RPM_FILE)
 
 print(f"RPM samples: {len(rpm)}")
-
-
-# ============================================================
-# VERIFY LENGTHS
-# ============================================================
 
 if len(trajectory) != len(rpm):
 
@@ -69,27 +44,12 @@ if len(trajectory) != len(rpm):
         f"RPM: {len(rpm)}"
     )
 
-
-# ============================================================
-# ADD RPM SIGNAL
-# ============================================================
-
 trajectory["rpm"] = rpm
-
-
-# ============================================================
-# SAVE COMBINED DATASET
-# ============================================================
 
 trajectory.to_csv(
     OUTPUT_FILE,
     index=False
 )
-
-
-# ============================================================
-# BASIC STATISTICS
-# ============================================================
 
 print("\n")
 print("=" * 60)
@@ -112,11 +72,6 @@ print(
     f"RPM standard deviation: {rpm.std():.3f}"
 )
 
-
-# ============================================================
-# DISPLAY FIRST ROWS
-# ============================================================
-
 print("\n")
 print("=" * 60)
 print("COMBINED DATA")
@@ -135,11 +90,6 @@ print(
     ].head(10).to_string(index=False)
 )
 
-
-# ============================================================
-# PLOT 1 — TUMOR Z POSITION
-# ============================================================
-
 plt.figure(figsize=(12, 5))
 
 plt.plot(
@@ -156,11 +106,6 @@ plt.grid(True)
 plt.tight_layout()
 
 plt.show()
-
-
-# ============================================================
-# PLOT 2 — RESPIRATORY SIGNAL
-# ============================================================
 
 plt.figure(figsize=(12, 5))
 
@@ -179,11 +124,6 @@ plt.tight_layout()
 
 plt.show()
 
-
-# ============================================================
-# PLOT 3 — Z POSITION VS RESPIRATORY SIGNAL
-# ============================================================
-
 plt.figure(figsize=(7, 6))
 
 plt.scatter(
@@ -201,11 +141,6 @@ plt.tight_layout()
 
 plt.show()
 
-
-# ============================================================
-# CORRELATION
-# ============================================================
-
 correlation = trajectory["rpm"].corr(
     trajectory["z_mm"]
 )
@@ -220,11 +155,6 @@ print(
     f"RPM signal and tumor Z position: "
     f"{correlation:.4f}"
 )
-
-
-# ============================================================
-# OUTPUT
-# ============================================================
 
 print("\n")
 print("=" * 60)

@@ -4,20 +4,10 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
-
-# ============================================================
-# PATHS
-# ============================================================
-
 DATASET_DIR = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
 MASK_DIR = DATASET_DIR / "tumor_masks"
 
 OUTPUT_FILE = DATASET_DIR / "tumor_trajectory.csv"
-
-
-# ============================================================
-# CHECK DATASET PATHS
-# ============================================================
 
 if not DATASET_DIR.exists():
     raise FileNotFoundError(
@@ -28,11 +18,6 @@ if not MASK_DIR.exists():
     raise FileNotFoundError(
         f"Tumor mask folder not found:\n{MASK_DIR}"
     )
-
-
-# ============================================================
-# GET FRAME NUMBER
-# ============================================================
 
 def get_frame_id(mask_path):
     """
@@ -65,11 +50,6 @@ def get_frame_id(mask_path):
 
     return int(frame_string)
 
-
-# ============================================================
-# GET TUMOR CENTROID
-# ============================================================
-
 def get_tumor_centroid(mask_path):
     """
     Load a tumor mask and calculate its centroid.
@@ -86,16 +66,13 @@ def get_tumor_centroid(mask_path):
 
     mask = mask_img.get_fdata()
 
-    # Tumor = every voxel with value > 0
     tumor_voxels = np.argwhere(mask > 0)
 
     if tumor_voxels.size == 0:
         return None
 
-    # Centroid in voxel coordinates
     voxel_centroid = tumor_voxels.mean(axis=0)
 
-    # Convert voxel coordinates to physical coordinates (mm)
     physical_centroid = nib.affines.apply_affine(
         mask_img.affine,
         voxel_centroid
@@ -111,11 +88,6 @@ def get_tumor_centroid(mask_path):
         mask_img.affine
     )
 
-
-# ============================================================
-# FIND ALL TUMOR MASKS
-# ============================================================
-
 mask_files = list(
     MASK_DIR.glob("tumormask_*.nii.gz")
 )
@@ -125,13 +97,10 @@ if len(mask_files) == 0:
         f"No tumor mask files found in:\n{MASK_DIR}"
     )
 
-
-# Sort using the actual numeric frame number
 mask_files = sorted(
     mask_files,
     key=get_frame_id
 )
-
 
 print("=" * 60)
 print("XCAT TUMOR TRAJECTORY EXTRACTION")
@@ -144,11 +113,6 @@ print(f"\nTumor mask directory:")
 print(MASK_DIR)
 
 print(f"\nFound {len(mask_files)} tumor masks.")
-
-
-# ============================================================
-# PROCESS ALL MASKS
-# ============================================================
 
 results = []
 
@@ -180,11 +144,6 @@ for index, mask_path in enumerate(mask_files):
             mask_affine
         ) = result
 
-
-        # ----------------------------------------------------
-        # Check that all masks have the same geometry
-        # ----------------------------------------------------
-
         if reference_shape is None:
 
             reference_shape = mask_shape
@@ -209,11 +168,6 @@ for index, mask_path in enumerate(mask_files):
                     f"Mask affine mismatch in {mask_path.name}"
                 )
 
-
-        # ----------------------------------------------------
-        # Store result
-        # ----------------------------------------------------
-
         results.append(
             {
                 "frame": frame_id,
@@ -230,7 +184,6 @@ for index, mask_path in enumerate(mask_files):
             }
         )
 
-
     except Exception as e:
 
         print(
@@ -239,18 +192,11 @@ for index, mask_path in enumerate(mask_files):
 
         raise
 
-
-    # Progress indicator
     if (index + 1) % 20 == 0 or index == 0:
 
         print(
             f"Processed {index + 1}/{len(mask_files)} masks..."
         )
-
-
-# ============================================================
-# CHECK RESULTS
-# ============================================================
 
 if len(results) == 0:
 
@@ -258,24 +204,15 @@ if len(results) == 0:
         "No valid tumor masks were processed."
     )
 
-
 trajectory = pd.DataFrame(results)
 
-
-# Sort by frame number
 trajectory = trajectory.sort_values(
     "frame"
 ).reset_index(drop=True)
 
-
-# ============================================================
-# CALCULATE DISPLACEMENT FROM FIRST FRAME
-# ============================================================
-
 reference_x = trajectory.loc[0, "x_mm"]
 reference_y = trajectory.loc[0, "y_mm"]
 reference_z = trajectory.loc[0, "z_mm"]
-
 
 trajectory["dx_mm"] = (
     trajectory["x_mm"] - reference_x
@@ -289,17 +226,11 @@ trajectory["dz_mm"] = (
     trajectory["z_mm"] - reference_z
 )
 
-
 trajectory["displacement_3d_mm"] = np.sqrt(
     trajectory["dx_mm"] ** 2
     + trajectory["dy_mm"] ** 2
     + trajectory["dz_mm"] ** 2
 )
-
-
-# ============================================================
-# CALCULATE MOTION MAGNITUDE
-# ============================================================
 
 trajectory["motion_magnitude_mm"] = np.sqrt(
     trajectory["dx_mm"] ** 2
@@ -307,20 +238,10 @@ trajectory["motion_magnitude_mm"] = np.sqrt(
     + trajectory["dz_mm"] ** 2
 )
 
-
-# ============================================================
-# SAVE CSV
-# ============================================================
-
 trajectory.to_csv(
     OUTPUT_FILE,
     index=False
 )
-
-
-# ============================================================
-# DISPLAY RESULTS
-# ============================================================
 
 print("\n")
 print("=" * 60)
@@ -339,7 +260,6 @@ print(
     f"{trajectory['frame'].max()}"
 )
 
-
 print("\n===== FIRST 10 FRAMES =====")
 
 print(
@@ -355,7 +275,6 @@ print(
     ].head(10).to_string(index=False)
 )
 
-
 print("\n===== LAST 5 FRAMES =====")
 
 print(
@@ -370,11 +289,6 @@ print(
         ]
     ].tail(5).to_string(index=False)
 )
-
-
-# ============================================================
-# MOTION RANGE
-# ============================================================
 
 print("\n")
 print("=" * 60)
@@ -423,11 +337,6 @@ print(
     f"{trajectory['displacement_3d_mm'].max():.3f} mm"
 )
 
-
-# ============================================================
-# TUMOR VOLUME PROXY
-# ============================================================
-
 print("\n===== TUMOR MASK SIZE =====")
 
 print(
@@ -444,11 +353,6 @@ print(
     f"Mean tumor voxels: "
     f"{trajectory['tumor_voxels'].mean():.2f}"
 )
-
-
-# ============================================================
-# OUTPUT
-# ============================================================
 
 print("\n")
 print("=" * 60)

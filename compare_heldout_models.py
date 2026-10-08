@@ -2,11 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 
-
-# ============================================================
-# HELD-OUT KALMAN vs RESPIRATORY RIDGE COMPARISON
-# ============================================================
-
 DATA_DIR = r"C:\Users\smk28\Downloads\DATASET1\data"
 
 MOTION_FILE = os.path.join(
@@ -29,24 +24,13 @@ OUTPUT_FILE = os.path.join(
     "heldout_model_comparison.csv"
 )
 
-
-# ============================================================
-# LOCKED HELD-OUT TEST RANGE
-# ============================================================
-
 TEST_START_FRAME = 139
 TEST_END_FRAME = 179
-
 
 print("=" * 70)
 print("HELD-OUT MODEL COMPARISON")
 print("KALMAN vs RESPIRATORY-INFORMED RIDGE")
 print("=" * 70)
-
-
-# ============================================================
-# LOAD DATA
-# ============================================================
 
 for file_path in [
     MOTION_FILE,
@@ -60,22 +44,15 @@ for file_path in [
             f"\nRequired file not found:\n{file_path}"
         )
 
-
 motion = pd.read_csv(MOTION_FILE)
 ridge = pd.read_csv(RIDGE_FILE)
 kalman = pd.read_csv(KALMAN_FILE)
-
 
 print("\nLoaded files:")
 
 print(f"Motion data : {len(motion)} rows")
 print(f"Ridge test  : {len(ridge)} rows")
 print(f"Kalman data : {len(kalman)} rows")
-
-
-# ============================================================
-# CHECK KALMAN COLUMNS
-# ============================================================
 
 required_kalman_columns = [
     "frame",
@@ -87,24 +64,17 @@ required_kalman_columns = [
     "predicted_z_mm"
 ]
 
-
 missing = [
     col
     for col in required_kalman_columns
     if col not in kalman.columns
 ]
 
-
 if missing:
 
     raise ValueError(
         f"\nMissing Kalman columns: {missing}"
     )
-
-
-# ============================================================
-# CHECK RIDGE COLUMNS
-# ============================================================
 
 required_ridge_columns = [
     "frame",
@@ -116,13 +86,11 @@ required_ridge_columns = [
     "predicted_z_mm"
 ]
 
-
 missing = [
     col
     for col in required_ridge_columns
     if col not in ridge.columns
 ]
-
 
 if missing:
 
@@ -130,31 +98,17 @@ if missing:
         f"\nMissing Ridge columns: {missing}"
     )
 
-
-# ============================================================
-# FILTER EXACT HELD-OUT TEST PERIOD
-# ============================================================
-
 ridge_test = ridge[
     (ridge["frame"] >= TEST_START_FRAME)
     &
     (ridge["frame"] <= TEST_END_FRAME)
 ].copy()
 
-
 kalman_test = kalman[
     (kalman["frame"] >= TEST_START_FRAME)
     &
     (kalman["frame"] <= TEST_END_FRAME)
 ].copy()
-
-
-# ============================================================
-# KEEP ONLY REQUIRED COLUMNS
-#
-# We rename Kalman columns before merging so that Pandas
-# does not create _x / _y duplicate column names.
-# ============================================================
 
 ridge_test = ridge_test[
     [
@@ -168,7 +122,6 @@ ridge_test = ridge_test[
     ]
 ].copy()
 
-
 ridge_test = ridge_test.rename(
     columns={
         "predicted_x_mm": "ridge_predicted_x_mm",
@@ -176,7 +129,6 @@ ridge_test = ridge_test.rename(
         "predicted_z_mm": "ridge_predicted_z_mm"
     }
 )
-
 
 kalman_test = kalman_test[
     [
@@ -190,7 +142,6 @@ kalman_test = kalman_test[
     ]
 ].copy()
 
-
 kalman_test = kalman_test.rename(
     columns={
         "actual_x_mm": "kalman_actual_x_mm",
@@ -203,22 +154,12 @@ kalman_test = kalman_test.rename(
     }
 )
 
-
-# ============================================================
-# MERGE ON FRAME
-# ============================================================
-
 comparison = pd.merge(
     ridge_test,
     kalman_test,
     on="frame",
     how="inner"
 )
-
-
-# ============================================================
-# TEST COVERAGE
-# ============================================================
 
 print("\n" + "=" * 70)
 print("HELD-OUT TEST COVERAGE")
@@ -244,17 +185,11 @@ print(
     f"{len(comparison)}"
 )
 
-
 if len(comparison) == 0:
 
     raise RuntimeError(
         "\nNo common held-out frames found."
     )
-
-
-# ============================================================
-# VERIFY EXACT FRAME MATCH
-# ============================================================
 
 ridge_frames = set(
     ridge_test["frame"]
@@ -268,13 +203,11 @@ common_frames = set(
     comparison["frame"]
 )
 
-
 print(
     f"\nCommon frame range: "
     f"{comparison['frame'].min()} → "
     f"{comparison['frame'].max()}"
 )
-
 
 if common_frames != ridge_frames.intersection(
     kalman_frames
@@ -284,13 +217,7 @@ if common_frames != ridge_frames.intersection(
         "\nFrame matching error."
     )
 
-
 print("✓ Both models evaluated on identical frames")
-
-
-# ============================================================
-# KALMAN 3D ERROR
-# ============================================================
 
 kalman_error_3d = np.sqrt(
 
@@ -317,11 +244,6 @@ kalman_error_3d = np.sqrt(
     ) ** 2
 )
 
-
-# ============================================================
-# RIDGE 3D ERROR
-# ============================================================
-
 ridge_error_3d = np.sqrt(
 
     (
@@ -347,7 +269,6 @@ ridge_error_3d = np.sqrt(
     ) ** 2
 )
 
-
 comparison["kalman_error_3d_mm"] = (
     kalman_error_3d
 )
@@ -355,11 +276,6 @@ comparison["kalman_error_3d_mm"] = (
 comparison["ridge_error_3d_mm"] = (
     ridge_error_3d
 )
-
-
-# ============================================================
-# METRIC FUNCTION
-# ============================================================
 
 def metrics(errors):
 
@@ -372,7 +288,6 @@ def metrics(errors):
         "maximum": np.max(errors)
     }
 
-
 kalman_metrics = metrics(
     kalman_error_3d
 )
@@ -381,14 +296,8 @@ ridge_metrics = metrics(
     ridge_error_3d
 )
 
-
-# ============================================================
-# P95 REDUCTION
-# ============================================================
-
 kalman_p95 = kalman_metrics["p95"]
 ridge_p95 = ridge_metrics["p95"]
-
 
 p95_reduction = (
     (kalman_p95 - ridge_p95)
@@ -396,18 +305,11 @@ p95_reduction = (
     kalman_p95
 ) * 100
 
-
-# ============================================================
-# PRINT COMPARISON
-# ============================================================
-
 print("\n" + "=" * 70)
 print("HELD-OUT PERFORMANCE COMPARISON")
 print("=" * 70)
 
-
 print("\nMetric                  Kalman        Ridge")
-
 
 print(
     f"Mean 3D error          "
@@ -415,13 +317,11 @@ print(
     f"{ridge_metrics['mean']:.4f} mm"
 )
 
-
 print(
     f"Median                 "
     f"{kalman_metrics['median']:.4f}       "
     f"{ridge_metrics['median']:.4f} mm"
 )
-
 
 print(
     f"P90                    "
@@ -429,13 +329,11 @@ print(
     f"{ridge_metrics['p90']:.4f} mm"
 )
 
-
 print(
     f"P95                    "
     f"{kalman_metrics['p95']:.4f}       "
     f"{ridge_metrics['p95']:.4f} mm"
 )
-
 
 print(
     f"P99                    "
@@ -443,40 +341,30 @@ print(
     f"{ridge_metrics['p99']:.4f} mm"
 )
 
-
 print(
     f"Maximum                "
     f"{kalman_metrics['maximum']:.4f}       "
     f"{ridge_metrics['maximum']:.4f} mm"
 )
 
-
-# ============================================================
-# P95 IMPROVEMENT
-# ============================================================
-
 print("\n" + "=" * 70)
 print("P95 IMPROVEMENT")
 print("=" * 70)
-
 
 print(
     f"\nKalman P95 : "
     f"{kalman_p95:.4f} mm"
 )
 
-
 print(
     f"Ridge P95  : "
     f"{ridge_p95:.4f} mm"
 )
 
-
 print(
     f"\nP95 reduction: "
     f"{p95_reduction:.2f}%"
 )
-
 
 if ridge_p95 < kalman_p95:
 
@@ -494,21 +382,14 @@ else:
         "respiratory cycles."
     )
 
-
-# ============================================================
-# SAVE COMPARISON
-# ============================================================
-
 comparison.to_csv(
     OUTPUT_FILE,
     index=False
 )
 
-
 print("\n" + "=" * 70)
 print("OUTPUT")
 print("=" * 70)
-
 
 print(
     "\nSaved comparison to:"
@@ -517,7 +398,6 @@ print(
 print(
     OUTPUT_FILE
 )
-
 
 print("\n" + "=" * 70)
 print("DONE")

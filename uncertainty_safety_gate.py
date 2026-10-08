@@ -3,21 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# ============================================================
-# CONFIG
-# ============================================================
-
-# FINAL HELD-OUT RIDGE PREDICTIONS
 INPUT_FILE = Path(
     r"C:\Users\smk28\Downloads\DATASET1\data\respiratory_heldout_test_results.csv"
 )
 
 OUTPUT_FILE = INPUT_FILE.parent / "uncertainty_safety_gate_results.csv"
-
-
-# ============================================================
-# LOAD RESULTS
-# ============================================================
 
 df = pd.read_csv(INPUT_FILE)
 
@@ -26,11 +16,6 @@ print("-" * 60)
 print("Rows:", len(df))
 print("Columns:")
 print(df.columns.tolist())
-
-
-# ============================================================
-# IDENTIFY 3D ERROR
-# ============================================================
 
 possible_3d_columns = [
     "prediction_error_3d_mm",
@@ -46,8 +31,6 @@ for col in possible_3d_columns:
         error_col = col
         break
 
-
-# If no 3D error column exists, calculate it from axis errors.
 if error_col is None:
 
     possible_axis_sets = [
@@ -77,11 +60,6 @@ if error_col is None:
             "Please check the printed column names."
         )
 
-
-# ============================================================
-# EMPIRICAL UNCERTAINTY
-# ============================================================
-
 errors = pd.to_numeric(
     df[error_col],
     errors="coerce"
@@ -94,7 +72,6 @@ p99 = np.percentile(errors, 99)
 maximum = np.max(errors)
 mean_error = np.mean(errors)
 
-
 print("\n")
 print("=" * 60)
 print("FINAL HELD-OUT MOTION-PREDICTION UNCERTAINTY")
@@ -106,15 +83,6 @@ print(f"P90 error  : {p90:.4f} mm")
 print(f"P95 error  : {p95:.4f} mm")
 print(f"P99 error  : {p99:.4f} mm")
 print(f"Maximum    : {maximum:.4f} mm")
-
-
-# ============================================================
-# RESEARCH SAFETY GATE
-# ============================================================
-
-# Use the empirical P95 from the FINAL held-out test set.
-# IMPORTANT:
-# This is NOT a clinically validated beam-hold threshold.
 
 SAFETY_THRESHOLD_MM = p95
 
@@ -132,11 +100,6 @@ df["threshold_exceeded"] = (
     df[error_col] > SAFETY_THRESHOLD_MM
 )
 
-
-# ============================================================
-# SUMMARY
-# ============================================================
-
 safe_count = (
     df["safety_status"] == "SAFE / CONTINUE"
 ).sum()
@@ -147,7 +110,6 @@ flag_count = (
 
 safe_percentage = safe_count / len(df) * 100
 flag_percentage = flag_count / len(df) * 100
-
 
 print("\n")
 print("=" * 60)
@@ -169,20 +131,10 @@ print(
     f"{flag_count} frames ({flag_percentage:.2f}%)"
 )
 
-
-# ============================================================
-# SAVE RESULTS
-# ============================================================
-
 df.to_csv(OUTPUT_FILE, index=False)
 
 print("\nSaved:")
 print(OUTPUT_FILE)
-
-
-# ============================================================
-# PLOT 1 — PREDICTION ERROR + SAFETY THRESHOLD
-# ============================================================
 
 plt.figure(figsize=(12, 5))
 
@@ -217,11 +169,6 @@ plot1 = (
 plt.savefig(plot1, dpi=300)
 plt.show()
 
-
-# ============================================================
-# PLOT 2 — ERROR DISTRIBUTION
-# ============================================================
-
 plt.figure(figsize=(9, 5))
 
 plt.hist(
@@ -253,7 +200,6 @@ plot2 = (
 
 plt.savefig(plot2, dpi=300)
 plt.show()
-
 
 print("\nPlots saved:")
 print(plot1)

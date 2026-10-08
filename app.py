@@ -5,18 +5,10 @@ import matplotlib.pyplot as plt
 import tempfile
 import os
 
-# ============================================================
-# PAGE CONFIG
-# ============================================================
-
 st.set_page_config(
     page_title="Predictive Digital Twin",
     layout="wide"
 )
-
-# ============================================================
-# SIMPLE ACADEMIC STYLE
-# ============================================================
 
 st.markdown("""
 <style>
@@ -44,11 +36,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-# ============================================================
-# TITLE
-# ============================================================
-
 st.title("Predictive Digital Twin for Lung Cancer Radiotherapy")
 
 st.write(
@@ -58,11 +45,6 @@ st.write(
 st.info(
     "Research prototype only — not intended for clinical treatment decisions."
 )
-
-
-# ============================================================
-# INPUT
-# ============================================================
 
 st.header("1. Input Data")
 
@@ -78,11 +60,6 @@ rpm_file = st.file_uploader(
     help="Upload the respiratory signal corresponding to the 4D-CT."
 )
 
-
-# ============================================================
-# WAIT UNTIL FILES ARE PROVIDED
-# ============================================================
-
 if ct_file is None or rpm_file is None:
 
     st.markdown("""
@@ -91,11 +68,11 @@ if ct_file is None or rpm_file is None:
     ### Required inputs
 
     **4D-CT**
-    
+
     A four-dimensional CT scan containing multiple respiratory phases.
 
     **RPM signal**
-    
+
     A respiratory waveform corresponding to the CT acquisition.
 
     Once both files are uploaded, the system will begin processing.
@@ -104,11 +81,6 @@ if ct_file is None or rpm_file is None:
     """, unsafe_allow_html=True)
 
     st.stop()
-
-
-# ============================================================
-# LOAD 4D CT
-# ============================================================
 
 st.header("2. Loading 4D-CT")
 
@@ -133,11 +105,6 @@ except Exception as e:
     st.error(f"Could not read the 4D-CT file: {e}")
     st.stop()
 
-
-# ============================================================
-# CHECK DIMENSIONS
-# ============================================================
-
 st.subheader("4D-CT Information")
 
 shape = ct_data.shape
@@ -159,11 +126,6 @@ with col3:
 with col4:
     st.metric("Maximum HU", f"{np.max(ct_data):.1f}")
 
-
-# ============================================================
-# CHECK 4D
-# ============================================================
-
 if len(shape) != 4:
 
     st.warning(
@@ -172,11 +134,6 @@ if len(shape) != 4:
     )
 
     st.stop()
-
-
-# ============================================================
-# LOAD RPM
-# ============================================================
 
 st.header("3. Respiratory Signal")
 
@@ -214,11 +171,6 @@ except Exception as e:
     st.error(f"Could not read RPM file: {e}")
     st.stop()
 
-
-# ============================================================
-# PHASE SELECTION
-# ============================================================
-
 st.header("4. Respiratory Phase")
 
 n_phases = ct_data.shape[3]
@@ -231,22 +183,11 @@ phase = st.slider(
     step=1
 )
 
-
-# ============================================================
-# GET CURRENT 3D CT
-# ============================================================
-
 current_ct = ct_data[:, :, :, phase]
 
-# Middle axial slice
 z_slice = current_ct.shape[2] // 2
 
 axial = current_ct[:, :, z_slice]
-
-
-# ============================================================
-# RPM MAPPING
-# ============================================================
 
 if len(rpm) == n_phases:
 
@@ -254,17 +195,11 @@ if len(rpm) == n_phases:
 
 else:
 
-    # Map CT phase to closest RPM sample
     rpm_index = int(
         phase * (len(rpm) - 1) / max(n_phases - 1, 1)
     )
 
     current_rpm = rpm[rpm_index]
-
-
-# ============================================================
-# DISPLAY CT
-# ============================================================
 
 st.subheader("Current 4D-CT Phase")
 
@@ -288,11 +223,6 @@ st.pyplot(fig)
 
 plt.close(fig)
 
-
-# ============================================================
-# SYNTHETIC TUMOR LOCALIZATION
-# ============================================================
-
 st.header("5. Tumor Motion Analysis")
 
 st.caption(
@@ -301,16 +231,11 @@ st.caption(
     "would replace this with a trained tumor segmentation model."
 )
 
-
-# Simple intensity-based candidate
-# Lung CT is generally low density; synthetic tumor is higher density.
-
 threshold = np.percentile(current_ct, 99)
 
 tumor_candidate = current_ct >= threshold
 
 coords = np.argwhere(tumor_candidate)
-
 
 if len(coords) > 0:
 
@@ -325,13 +250,6 @@ else:
     tumor_x = current_ct.shape[0] / 2
     tumor_y = current_ct.shape[1] / 2
     tumor_z = current_ct.shape[2] / 2
-
-
-# ============================================================
-# MOTION ESTIMATION
-# ============================================================
-
-# Compare tumor candidate center with first phase.
 
 reference_ct = ct_data[:, :, :, 0]
 
@@ -358,14 +276,11 @@ else:
         reference_ct.shape[2] / 2
     ])
 
-
 displacement_voxel = (
     np.array([tumor_x, tumor_y, tumor_z])
     - reference_center
 )
 
-
-# Assume synthetic CT has 3 mm voxel spacing
 voxel_spacing_mm = np.array([3.0, 3.0, 3.0])
 
 displacement_mm = (
@@ -375,11 +290,6 @@ displacement_mm = (
 motion_magnitude = np.linalg.norm(
     displacement_mm
 )
-
-
-# ============================================================
-# PREDICTION
-# ============================================================
 
 st.subheader("Predicted Tumor Motion")
 
@@ -409,18 +319,12 @@ with c4:
         f"{motion_magnitude:.2f} mm"
     )
 
-
-# ============================================================
-# UNCERTAINTY
-# ============================================================
-
 RESEARCH_THRESHOLD_MM = 3.4304
 
 prediction_uncertainty = min(
     motion_magnitude,
     RESEARCH_THRESHOLD_MM
 )
-
 
 st.subheader("Prediction Uncertainty")
 
@@ -445,20 +349,12 @@ else:
         "Prediction exceeds the research uncertainty bound."
     )
 
-
-# ============================================================
-# DOSE OVERLAY
-# ============================================================
-
 st.header("6. Research Dose Distribution")
 
 st.caption(
     "The dose field below is simulated for visualization. "
     "It is not a clinical RT dose calculation."
 )
-
-
-# Create Gaussian dose distribution around predicted tumor.
 
 xx, yy = np.meshgrid(
     np.arange(current_ct.shape[0]),
@@ -479,11 +375,6 @@ dose = np.exp(
 )
 
 dose = dose / np.max(dose) * 100
-
-
-# ============================================================
-# CT + DOSE
-# ============================================================
 
 fig2, ax2 = plt.subplots(figsize=(9, 7))
 
@@ -527,11 +418,6 @@ st.pyplot(fig2)
 
 plt.close(fig2)
 
-
-# ============================================================
-# DIGITAL TWIN STATE
-# ============================================================
-
 st.header("7. Digital Twin State")
 
 col1, col2 = st.columns(2)
@@ -546,7 +432,6 @@ with col1:
 
     st.write("**Predicted motion**")
     st.write(f"{motion_magnitude:.2f} mm")
-
 
 with col2:
 
@@ -564,11 +449,6 @@ with col2:
 
         st.success("Within research threshold")
 
-
-# ============================================================
-# REPLANNING LOGIC
-# ============================================================
-
 st.header("8. Replanning Review")
 
 if motion_magnitude > RESEARCH_THRESHOLD_MM:
@@ -583,11 +463,6 @@ else:
     st.success(
         "No replanning review triggered for this phase."
     )
-
-
-# ============================================================
-# FOOTER
-# ============================================================
 
 st.divider()
 

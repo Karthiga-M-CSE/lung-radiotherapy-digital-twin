@@ -2,10 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 
-# ============================================================
-# FILE LOCATIONS
-# ============================================================
-
 PROJECT = r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT"
 DATA = r"C:\Users\smk28\Downloads\DATASET1\data"
 
@@ -35,20 +31,10 @@ FILES = {
     )
 }
 
-
-# ============================================================
-# HEADER
-# ============================================================
-
 print("\n" + "=" * 70)
 print("LUNG CANCER RADIOTHERAPY DIGITAL TWIN")
 print("MASTER PIPELINE VALIDATION")
 print("=" * 70)
-
-
-# ============================================================
-# FILE CHECK
-# ============================================================
 
 print("\n[1] FILE AVAILABILITY")
 print("-" * 70)
@@ -66,17 +52,11 @@ for name, path in FILES.items():
     if not exists:
         all_present = False
 
-
 if not all_present:
 
     print("\nERROR: One or more required files are missing.")
     print("Fix the missing file before continuing.")
     raise SystemExit
-
-
-# ============================================================
-# LOAD FILES
-# ============================================================
 
 seg = pd.read_csv(FILES["segmentation"])
 kalman = pd.read_csv(FILES["kalman"])
@@ -84,11 +64,6 @@ resp = pd.read_csv(FILES["respiratory"])
 safety = pd.read_csv(FILES["safety"])
 twin = pd.read_csv(FILES["digital_twin"])
 replan = pd.read_csv(FILES["replanning"])
-
-
-# ============================================================
-# ROW COUNTS
-# ============================================================
 
 print("\n[2] ROW COUNTS")
 print("-" * 70)
@@ -99,11 +74,6 @@ print(f"Respiratory model  : {len(resp)}")
 print(f"Safety gate        : {len(safety)}")
 print(f"Digital Twin       : {len(twin)}")
 print(f"Replanning         : {len(replan)}")
-
-
-# ============================================================
-# REQUIRED COLUMNS
-# ============================================================
 
 print("\n[3] REQUIRED COLUMNS")
 print("-" * 70)
@@ -146,7 +116,6 @@ requirements = {
     )
 }
 
-
 columns_ok = True
 
 for name, (df, required) in requirements.items():
@@ -170,11 +139,6 @@ for name, (df, required) in requirements.items():
             f"{name:15s}: OK"
         )
 
-
-# ============================================================
-# MOTION METRICS
-# ============================================================
-
 print("\n[4] MOTION PREDICTION METRICS")
 print("-" * 70)
 
@@ -186,7 +150,6 @@ resp_error = resp[
     "prediction_error_3d_mm"
 ].to_numpy()
 
-
 kalman_p95 = np.percentile(
     kalman_error, 95
 )
@@ -195,12 +158,10 @@ resp_p95 = np.percentile(
     resp_error, 95
 )
 
-
 improvement = (
     (kalman_p95 - resp_p95)
     / kalman_p95
 ) * 100
-
 
 print(
     f"Kalman P95              : "
@@ -216,11 +177,6 @@ print(
     f"P95 reduction           : "
     f"{improvement:.2f}%"
 )
-
-
-# ============================================================
-# SAFETY GATE
-# ============================================================
 
 print("\n[5] UNCERTAINTY / SAFETY GATE")
 print("-" * 70)
@@ -249,7 +205,6 @@ else:
         "Safety-status column not found."
     )
 
-
 if "prediction_error_3d_mm" in safety.columns:
 
     safety_errors = safety[
@@ -266,11 +221,6 @@ if "prediction_error_3d_mm" in safety.columns:
         f"{np.max(safety_errors):.4f} mm"
     )
 
-
-# ============================================================
-# DIGITAL TWIN
-# ============================================================
-
 print("\n[6] DIGITAL TWIN")
 print("-" * 70)
 
@@ -286,7 +236,6 @@ if "prediction_error_mm" in twin.columns:
         f"{twin['uncertainty_bound_mm'].quantile(0.95):.4f} mm"
     )
 
-
 if "safety_status" in twin.columns:
 
     print("\nSafety status:")
@@ -296,11 +245,6 @@ if "safety_status" in twin.columns:
         .value_counts()
         .to_string()
     )
-
-
-# ============================================================
-# REPLANNING
-# ============================================================
 
 print("\n[7] REPLANNING TRIGGER")
 print("-" * 70)
@@ -332,11 +276,6 @@ else:
         "through available output."
     )
 
-
-# ============================================================
-# FINAL STATUS
-# ============================================================
-
 print("\n" + "=" * 70)
 
 if all_present and columns_ok:
@@ -346,7 +285,6 @@ if all_present and columns_ok:
 else:
 
     print("PIPELINE VALIDATION: CHECK REQUIRED")
-
 
 print("=" * 70)
 

@@ -1,17 +1,9 @@
 import pydicom
 import numpy as np
 
-# --------------------------------------------------
-# FILE PATHS
-# --------------------------------------------------
-
 sfile = r"C:\Users\smk28\Downloads\Center2\Center 2\structureSetFiles\RTSTRUCT_V15_QA_FH_20240708\9999.144874522247533734992787435849309847299"
 
 dfile = r"C:\Users\smk28\Downloads\Center2\Center 2\doseFiles\RTDOSE_EclipseDosen_20240708\9999.74820833721338163423465608981710622482"
-
-# --------------------------------------------------
-# READ DICOM
-# --------------------------------------------------
 
 S = pydicom.dcmread(sfile)
 D = pydicom.dcmread(dfile)
@@ -20,10 +12,6 @@ dose = D.pixel_array.astype(float) * float(D.DoseGridScaling)
 
 print("Dose array shape:", dose.shape)
 print("Dose maximum:", dose.max(), "Gy")
-
-# --------------------------------------------------
-# CTV_1 ROI
-# --------------------------------------------------
 
 roi = next(
     x for x in S.ROIContourSequence
@@ -34,10 +22,6 @@ origin = np.array(D.ImagePositionPatient, dtype=float)
 
 sx = float(D.PixelSpacing[0])
 sy = float(D.PixelSpacing[1])
-
-# --------------------------------------------------
-# POLYGON RASTERIZATION
-# --------------------------------------------------
 
 def polygon_inside(rows, cols, shape):
 
@@ -78,11 +62,6 @@ def polygon_inside(rows, cols, shape):
 
     return rr, cc, inside
 
-
-# --------------------------------------------------
-# CREATE CTV MASK
-# --------------------------------------------------
-
 mask = np.zeros(dose.shape, dtype=bool)
 
 for contour in roi.ContourSequence:
@@ -110,11 +89,6 @@ for contour in roi.ContourSequence:
 
     mask[z_index, rr, cc] |= inside
 
-
-# --------------------------------------------------
-# DOSE STATISTICS
-# --------------------------------------------------
-
 def dose_stats(test_mask):
 
     values = dose[test_mask]
@@ -129,11 +103,6 @@ def dose_stats(test_mask):
         "max": values.max()
     }
 
-
-# --------------------------------------------------
-# BASELINE
-# --------------------------------------------------
-
 baseline = dose_stats(mask)
 
 print()
@@ -145,11 +114,6 @@ print("CTV voxels :", baseline["voxels"])
 print("Dmean      :", round(baseline["mean"], 4), "Gy")
 print("D95        :", round(baseline["D95"], 4), "Gy")
 print("Dmax       :", round(baseline["max"], 4), "Gy")
-
-
-# --------------------------------------------------
-# SHIFT FUNCTION
-# --------------------------------------------------
 
 def shift_mask(mask, dx_mm, dy_mm, dz_mm):
 
@@ -195,11 +159,6 @@ def shift_mask(mask, dx_mm, dy_mm, dz_mm):
 
     return shifted
 
-
-# --------------------------------------------------
-# EXPERIMENT
-# --------------------------------------------------
-
 shifts = [0, 1, 2, 3, 3.68, 4]
 
 print()
@@ -222,7 +181,6 @@ for s in shifts:
         f"{stats['max']:8.4f}"
     )
 
-
 print()
 print("========================================")
 print("POSITIVE Y SHIFT")
@@ -243,7 +201,6 @@ for s in shifts:
         f"{stats['max']:8.4f}"
     )
 
-
 print()
 print("========================================")
 print("POSITIVE Z SHIFT")
@@ -263,7 +220,6 @@ for s in shifts:
         f"{stats['D95']:8.4f}   "
         f"{stats['max']:8.4f}"
     )
-
 
 print()
 print("========================================")

@@ -1,20 +1,11 @@
 import pandas as pd
 import numpy as np
 
-# --------------------------------------------------
-# FILES
-# --------------------------------------------------
-
 prediction_file = r"C:\Users\smk28\Downloads\DATASET1\data\respiratory_heldout_test_results.csv"
 
 safety_gate_file = r"C:\Users\smk28\Downloads\DATASET1\data\uncertainty_safety_gate_results.csv"
 
 output_file = r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT\digital_twin_state.csv"
-
-
-# --------------------------------------------------
-# LOAD FINAL HELD-OUT PREDICTIONS
-# --------------------------------------------------
 
 df = pd.read_csv(prediction_file)
 
@@ -22,89 +13,38 @@ print("Prediction rows:", len(df))
 print("Prediction columns:")
 print(df.columns.tolist())
 
-
-# --------------------------------------------------
-# LOAD FINAL SAFETY GATE
-# --------------------------------------------------
-
 safety = pd.read_csv(safety_gate_file)
 
 print()
 print("Safety-gate rows:", len(safety))
-
-
-# --------------------------------------------------
-# CHECK FRAME ALIGNMENT
-# --------------------------------------------------
 
 if not df["frame"].equals(safety["frame"]):
     raise ValueError(
         "Prediction and safety-gate frames do not match."
     )
 
-
-# --------------------------------------------------
-# FINAL P95 UNCERTAINTY
-# --------------------------------------------------
-
 P95_UNCERTAINTY_MM = safety["uncertainty_bound_mm"].iloc[0]
-
-
-# --------------------------------------------------
-# DIGITAL TWIN STATE
-# --------------------------------------------------
 
 twin = pd.DataFrame()
 
-# Frame
 twin["frame"] = df["frame"]
-
-
-# --------------------------------------------------
-# ACTUAL TUMOR STATE
-# --------------------------------------------------
 
 twin["actual_x_mm"] = df["actual_x_mm"]
 twin["actual_y_mm"] = df["actual_y_mm"]
 twin["actual_z_mm"] = df["actual_z_mm"]
 
-
-# --------------------------------------------------
-# PREDICTED TUMOR STATE
-# --------------------------------------------------
-
 twin["predicted_x_mm"] = df["predicted_x_mm"]
 twin["predicted_y_mm"] = df["predicted_y_mm"]
 twin["predicted_z_mm"] = df["predicted_z_mm"]
 
-
-# --------------------------------------------------
-# PREDICTION ERROR
-# --------------------------------------------------
-
 twin["prediction_error_mm"] = df["error_3d_mm"]
 
-
-# --------------------------------------------------
-# UNCERTAINTY ESTIMATE
-# --------------------------------------------------
-
 twin["uncertainty_bound_mm"] = P95_UNCERTAINTY_MM
-
-
-# --------------------------------------------------
-# SAFETY STATUS
-# --------------------------------------------------
 
 twin["safety_status"] = safety["safety_status"].map({
     "SAFE / CONTINUE": "CONTINUE",
     "FLAG / REVIEW": "REVIEW"
 })
-
-
-# --------------------------------------------------
-# MOTION MAGNITUDE
-# --------------------------------------------------
 
 twin["predicted_motion_magnitude_mm"] = np.sqrt(
     twin["predicted_x_mm"] ** 2
@@ -112,17 +52,7 @@ twin["predicted_motion_magnitude_mm"] = np.sqrt(
     + twin["predicted_z_mm"] ** 2
 )
 
-
-# --------------------------------------------------
-# SAVE
-# --------------------------------------------------
-
 twin.to_csv(output_file, index=False)
-
-
-# --------------------------------------------------
-# SUMMARY
-# --------------------------------------------------
 
 print()
 print("========================================")

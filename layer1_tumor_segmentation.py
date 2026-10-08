@@ -4,22 +4,12 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 
-
-# ============================================
-# XCAT DATASET PATH
-# ============================================
-
 DATA_DIR = r"C:\Users\smk28\Downloads\DATASET1\data"
 
 VOLUME_DIR = os.path.join(DATA_DIR, "volumes")
 MASK_DIR = os.path.join(DATA_DIR, "tumor_masks")
 
 OUTPUT_FILE = "tumor_segmentation_results.csv"
-
-
-# ============================================
-# Find volume and mask files
-# ============================================
 
 volume_files = sorted(
     glob.glob(os.path.join(VOLUME_DIR, "volume_*.nii.gz")),
@@ -35,7 +25,6 @@ mask_files = sorted(
     )
 )
 
-
 print("==========================================")
 print("      LAYER 1 - TUMOR SEGMENTATION")
 print("==========================================")
@@ -43,17 +32,10 @@ print("==========================================")
 print(f"Volumes found : {len(volume_files)}")
 print(f"Masks found   : {len(mask_files)}")
 
-
 if len(volume_files) != len(mask_files):
     raise ValueError("Number of volumes and masks do not match.")
 
-
 results = []
-
-
-# ============================================
-# Process every frame
-# ============================================
 
 for volume_file, mask_file in zip(volume_files, mask_files):
 
@@ -63,20 +45,13 @@ for volume_file, mask_file in zip(volume_files, mask_files):
         .split(".")[0]
     )
 
-    # Load CT volume
     volume_img = nib.load(volume_file)
     volume = volume_img.get_fdata()
 
-    # Load tumor mask
     mask_img = nib.load(mask_file)
     mask = mask_img.get_fdata()
 
-    # Convert mask to binary
     mask_binary = mask > 0
-
-    # ========================================
-    # Tumor voxel information
-    # ========================================
 
     tumor_indices = np.argwhere(mask_binary)
 
@@ -86,10 +61,6 @@ for volume_file, mask_file in zip(volume_files, mask_files):
         print(f"Warning: frame {volume_id} has empty mask.")
         continue
 
-    # ========================================
-    # Voxel dimensions
-    # ========================================
-
     voxel_dimensions = mask_img.header.get_zooms()[:3]
 
     voxel_volume_mm3 = np.prod(voxel_dimensions)
@@ -98,15 +69,7 @@ for volume_file, mask_file in zip(volume_files, mask_files):
 
     tumor_volume_cm3 = tumor_volume_mm3 / 1000.0
 
-    # ========================================
-    # Tumor centroid in voxel coordinates
-    # ========================================
-
     centroid_voxel = tumor_indices.mean(axis=0)
-
-    # ========================================
-    # Convert centroid to physical coordinates
-    # ========================================
 
     centroid_world = nib.affines.apply_affine(
         mask_img.affine,
@@ -117,10 +80,6 @@ for volume_file, mask_file in zip(volume_files, mask_files):
     y_mm = centroid_world[1]
     z_mm = centroid_world[2]
 
-    # ========================================
-    # Bounding box
-    # ========================================
-
     min_coords = tumor_indices.min(axis=0)
     max_coords = tumor_indices.max(axis=0)
 
@@ -129,10 +88,6 @@ for volume_file, mask_file in zip(volume_files, mask_files):
     bbox_x_mm = bbox_voxels[0] * voxel_dimensions[0]
     bbox_y_mm = bbox_voxels[1] * voxel_dimensions[1]
     bbox_z_mm = bbox_voxels[2] * voxel_dimensions[2]
-
-    # ========================================
-    # Store result
-    # ========================================
 
     results.append({
         "frame": volume_id,
@@ -151,19 +106,9 @@ for volume_file, mask_file in zip(volume_files, mask_files):
         "bbox_z_mm": bbox_z_mm
     })
 
-
-# ============================================
-# Save results
-# ============================================
-
 df = pd.DataFrame(results)
 
 df.to_csv(OUTPUT_FILE, index=False)
-
-
-# ============================================
-# Summary
-# ============================================
 
 print("\n==========================================")
 print("LAYER 1 COMPLETE")

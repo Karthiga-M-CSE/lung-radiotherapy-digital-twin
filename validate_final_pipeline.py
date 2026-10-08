@@ -1,10 +1,6 @@
 import pandas as pd
 from pathlib import Path
 
-# ============================================================
-# FINAL PIPELINE VALIDATION
-# ============================================================
-
 DATA = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
 PROJECT = Path(r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT")
 
@@ -20,10 +16,6 @@ print("=" * 70)
 print("FINAL DIGITAL TWIN PIPELINE VALIDATION")
 print("=" * 70)
 
-# ------------------------------------------------------------
-# Load
-# ------------------------------------------------------------
-
 dfs = {}
 
 for name, path in FILES.items():
@@ -36,17 +28,11 @@ for name, path in FILES.items():
     dfs[name] = pd.read_csv(path)
     print(f"\n{name.upper():12} : {len(dfs[name])} rows")
 
-
 ridge = dfs["ridge"]
 safety = dfs["safety"]
 twin = dfs["twin"]
 replanning = dfs["replanning"]
 comparison = dfs["comparison"]
-
-
-# ------------------------------------------------------------
-# Expected final test range
-# ------------------------------------------------------------
 
 EXPECTED_FRAMES = set(range(139, 180))
 
@@ -75,11 +61,6 @@ for name, df in [
 
 print("\n✓ All downstream modules use identical 41 held-out frames.")
 
-
-# ------------------------------------------------------------
-# Check Ridge result
-# ------------------------------------------------------------
-
 print("\n" + "=" * 70)
 print("RIDGE MODEL VALIDATION")
 print("=" * 70)
@@ -91,16 +72,9 @@ ridge_p95 = ridge_error.quantile(0.95)
 print(f"Mean error : {ridge_error.mean():.4f} mm")
 print(f"P95 error  : {ridge_p95:.4f} mm")
 
-# The earlier comparison used np.percentile rather than pandas
-# quantile. Validate against the known final value with tolerance.
 assert abs(ridge_p95 - 3.4304) < 0.01
 
 print("✓ Final Ridge P95 ≈ 3.4304 mm")
-
-
-# ------------------------------------------------------------
-# Safety Gate validation
-# ------------------------------------------------------------
 
 print("\n" + "=" * 70)
 print("SAFETY GATE VALIDATION")
@@ -128,11 +102,6 @@ assert review_count == 2
 
 print("✓ Safety Gate = 39 CONTINUE / 2 REVIEW")
 
-
-# ------------------------------------------------------------
-# Digital Twin validation
-# ------------------------------------------------------------
-
 print("\n" + "=" * 70)
 print("DIGITAL TWIN VALIDATION")
 print("=" * 70)
@@ -145,11 +114,6 @@ print(f"Mean error: {twin['prediction_error_mm'].mean():.4f} mm")
 assert abs(twin_threshold - safety_threshold) < 0.0001
 
 print("✓ Digital Twin uses the same uncertainty threshold.")
-
-
-# ------------------------------------------------------------
-# Replanning validation
-# ------------------------------------------------------------
 
 print("\n" + "=" * 70)
 print("REPLANNING VALIDATION")
@@ -171,11 +135,6 @@ assert review_flags == 0
 
 print("✓ 2 deviations, but no 3-consecutive-deviation trigger.")
 
-
-# ------------------------------------------------------------
-# Model comparison validation
-# ------------------------------------------------------------
-
 print("\n" + "=" * 70)
 print("MODEL COMPARISON VALIDATION")
 print("=" * 70)
@@ -187,11 +146,6 @@ print("\nExpected final comparison:")
 print("Kalman P95 : 11.8767 mm")
 print("Ridge P95  : 3.4304 mm")
 print("Reduction  : 71.12%")
-
-
-# ------------------------------------------------------------
-# Final result
-# ------------------------------------------------------------
 
 print("\n" + "=" * 70)
 print("FINAL VALIDATION PASSED")

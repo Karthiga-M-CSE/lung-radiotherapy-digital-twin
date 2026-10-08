@@ -1,6 +1,5 @@
 from pathlib import Path
 
-# CHANGE THIS ONE LINE to the location of your XCAT_4DCT folder
 DATASET_DIR = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
 
 print("Dataset exists:", DATASET_DIR.exists())

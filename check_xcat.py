@@ -2,10 +2,8 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-# XCAT dataset
 DATASET_DIR = Path(r"C:\Users\smk28\Downloads\DATASET1\data")
 
-# Load frame 0
 volume_path = DATASET_DIR / "volumes" / "volume_0.nii.gz"
 mask_path = DATASET_DIR / "tumor_masks" / "tumormask_0.nii.gz"
 
@@ -27,7 +25,6 @@ print("Data type:", mask_img.get_data_dtype())
 print("Affine:")
 print(mask_img.affine)
 
-# Convert to arrays
 volume = volume_img.get_fdata()
 mask = mask_img.get_fdata()
 
@@ -40,7 +37,6 @@ print("Mask maximum:", np.max(mask))
 
 print("Tumor voxels:", np.sum(mask > 0))
 
-# Check whether dimensions match
 print("\n===== ALIGNMENT CHECK =====")
 print("Same shape:", volume.shape == mask.shape)
 print(

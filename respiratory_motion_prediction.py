@@ -8,11 +8,6 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-# ============================================================
-# PATHS
-# ============================================================
-
 DATASET_DIR = Path(
     r"C:\Users\smk28\Downloads\DATASET1\data"
 )
@@ -21,36 +16,11 @@ INPUT_FILE = DATASET_DIR / "tumor_motion_with_rpm.csv"
 
 OUTPUT_FILE = DATASET_DIR / "respiratory_prediction_results.csv"
 
-
-# ============================================================
-# SETTINGS
-# ============================================================
-
-# Number of previous samples included in the feature window.
-#
-# If N_LAGS = 5:
-#
-# frame t-5
-# frame t-4
-# frame t-3
-# frame t-2
-# frame t-1
-# frame t
-#
-# are used to predict frame t+1.
-
 N_LAGS = 5
 
-# Start making predictions after this many samples.
 MIN_TRAINING_SAMPLES = 50
 
-# Ridge regularization.
 ALPHA = 1.0
-
-
-# ============================================================
-# CHECK INPUT FILE
-# ============================================================
 
 if not INPUT_FILE.exists():
 
@@ -58,13 +28,7 @@ if not INPUT_FILE.exists():
         f"\nInput file not found:\n{INPUT_FILE}\n"
     )
 
-
-# ============================================================
-# LOAD DATA
-# ============================================================
-
 data = pd.read_csv(INPUT_FILE)
-
 
 required_columns = [
     "frame",
@@ -73,7 +37,6 @@ required_columns = [
     "z_mm",
     "rpm"
 ]
-
 
 for column in required_columns:
 
@@ -86,19 +49,9 @@ for column in required_columns:
             f"{list(data.columns)}"
         )
 
-
-# ============================================================
-# CLEAN DATA
-# ============================================================
-
 data = data.dropna(
     subset=required_columns
 ).reset_index(drop=True)
-
-
-# ============================================================
-# BASIC VALIDATION
-# ============================================================
 
 if len(data) < MIN_TRAINING_SAMPLES + N_LAGS + 2:
 
@@ -109,19 +62,9 @@ if len(data) < MIN_TRAINING_SAMPLES + N_LAGS + 2:
         f"{MIN_TRAINING_SAMPLES + N_LAGS + 2}"
     )
 
-
-# ============================================================
-# SORT BY FRAME
-# ============================================================
-
 data = data.sort_values(
     "frame"
 ).reset_index(drop=True)
-
-
-# ============================================================
-# NUMPY ARRAYS
-# ============================================================
 
 frames = data[
     "frame"
@@ -135,41 +78,7 @@ positions = data[
     ["x_mm", "y_mm", "z_mm"]
 ].to_numpy(dtype=float)
 
-
 n = len(data)
-
-
-# ============================================================
-# FEATURE FUNCTION
-# ============================================================
-#
-# Given CURRENT frame index:
-#
-# index = t
-#
-# Features contain:
-#
-# RPM:
-# t-5 ... t
-#
-# X:
-# t-5 ... t
-#
-# Y:
-# t-5 ... t
-#
-# Z:
-# t-5 ... t
-#
-# Total features:
-#
-# 6 RPM values
-# + 6 X values
-# + 6 Y values
-# + 6 Z values
-#
-# = 24 features
-# ============================================================
 
 def create_features(index):
 
@@ -185,17 +94,9 @@ def create_features(index):
 
     feature_vector = []
 
-    # --------------------------------------------------------
-    # Respiratory signal history
-    # --------------------------------------------------------
-
     feature_vector.extend(
         rpm[start:end]
     )
-
-    # --------------------------------------------------------
-    # Tumor position history
-    # --------------------------------------------------------
 
     feature_vector.extend(
         positions[start:end, 0]
@@ -214,89 +115,34 @@ def create_features(index):
         dtype=float
     )
 
-
-# ============================================================
-# STORAGE
-# ============================================================
-
 predicted_positions = []
 
 actual_positions = []
 
 prediction_frames = []
 
-
-# ============================================================
-# WALK-FORWARD PREDICTION
-# ============================================================
-#
-# We predict one frame ahead.
-#
-# Example:
-#
-# Features through frame 49
-#              ↓
-# predict frame 50
-#
-# Then:
-#
-# Features through frame 50
-#              ↓
-# predict frame 51
-#
-# etc.
-#
-# The model is trained ONLY using information available
-# before the prediction frame.
-# ============================================================
-
 for target_index in range(
     MIN_TRAINING_SAMPLES,
     n
 ):
 
-    # --------------------------------------------------------
-    # The target is frame target_index.
-    #
-    # Therefore the latest available input is:
-    #
-    # target_index - 1
-    # --------------------------------------------------------
-
     latest_input_index = (
         target_index - 1
     )
-
-
-    # --------------------------------------------------------
-    # BUILD TRAINING DATA
-    # --------------------------------------------------------
 
     X_train = []
 
     y_train = []
 
-
-    # --------------------------------------------------------
-    # Earliest valid target:
-    #
-    # To create features ending at frame 5,
-    # we need frames 0...5.
-    #
-    # Therefore the earliest target is frame 6.
-    # --------------------------------------------------------
-
     first_training_target = (
         N_LAGS + 1
     )
-
 
     for train_target in range(
         first_training_target,
         target_index
     ):
 
-        # Input ends immediately before target.
         feature_index = (
             train_target - 1
         )
@@ -313,11 +159,6 @@ for target_index in range(
             positions[train_target]
         )
 
-
-    # --------------------------------------------------------
-    # Convert to arrays
-    # --------------------------------------------------------
-
     X_train = np.vstack(
         X_train
     )
@@ -325,11 +166,6 @@ for target_index in range(
     y_train = np.vstack(
         y_train
     )
-
-
-    # --------------------------------------------------------
-    # CURRENT INPUT
-    # --------------------------------------------------------
 
     current_features = create_features(
         latest_input_index
@@ -340,11 +176,6 @@ for target_index in range(
         -1
     )
 
-
-    # --------------------------------------------------------
-    # MODEL
-    # --------------------------------------------------------
-
     model = make_pipeline(
         StandardScaler(),
         Ridge(
@@ -352,34 +183,18 @@ for target_index in range(
         )
     )
 
-
-    # --------------------------------------------------------
-    # TRAIN
-    # --------------------------------------------------------
-
     model.fit(
         X_train,
         y_train
     )
 
-
-    # --------------------------------------------------------
-    # PREDICT
-    # --------------------------------------------------------
-
     predicted_position = model.predict(
         current_features
     )[0]
 
-
     actual_position = positions[
         target_index
     ]
-
-
-    # --------------------------------------------------------
-    # STORE
-    # --------------------------------------------------------
 
     predicted_positions.append(
         predicted_position
@@ -393,11 +208,6 @@ for target_index in range(
         frames[target_index]
     )
 
-
-# ============================================================
-# CONVERT RESULTS TO ARRAYS
-# ============================================================
-
 predicted_positions = np.asarray(
     predicted_positions
 )
@@ -410,33 +220,19 @@ prediction_frames = np.asarray(
     prediction_frames
 )
 
-
-# ============================================================
-# CALCULATE ERRORS
-# ============================================================
-
 errors = (
     actual_positions
     - predicted_positions
 )
 
-
 absolute_errors = np.abs(
     errors
 )
-
-
-# 3D Euclidean prediction error
 
 error_3d = np.linalg.norm(
     errors,
     axis=1
 )
-
-
-# ============================================================
-# RESULTS DATAFRAME
-# ============================================================
 
 results = pd.DataFrame({
 
@@ -483,11 +279,6 @@ results = pd.DataFrame({
         error_3d
 })
 
-
-# ============================================================
-# OVERALL ERROR STATISTICS
-# ============================================================
-
 mean_error = np.mean(
     error_3d
 )
@@ -515,11 +306,6 @@ max_error = np.max(
     error_3d
 )
 
-
-# ============================================================
-# AXIS-SPECIFIC STATISTICS
-# ============================================================
-
 mean_x_error = np.mean(
     absolute_errors[:, 0]
 )
@@ -531,7 +317,6 @@ mean_y_error = np.mean(
 mean_z_error = np.mean(
     absolute_errors[:, 2]
 )
-
 
 p95_x_error = np.percentile(
     absolute_errors[:, 0],
@@ -548,20 +333,10 @@ p95_z_error = np.percentile(
     95
 )
 
-
-# ============================================================
-# SAVE RESULTS
-# ============================================================
-
 results.to_csv(
     OUTPUT_FILE,
     index=False
 )
-
-
-# ============================================================
-# PRINT RESULTS
-# ============================================================
 
 print()
 print("=" * 60)
@@ -583,11 +358,6 @@ print(
     f"Training begins at frame: "
     f"{MIN_TRAINING_SAMPLES}"
 )
-
-
-# ============================================================
-# 3D ERROR
-# ============================================================
 
 print()
 print("=" * 60)
@@ -624,11 +394,6 @@ print(
     f"{max_error:.4f} mm"
 )
 
-
-# ============================================================
-# AXIS ERROR
-# ============================================================
-
 print()
 print("=" * 60)
 print("AXIS-SPECIFIC ERROR")
@@ -663,12 +428,6 @@ print(
     f"P95 Z error: "
     f"{p95_z_error:.4f} mm"
 )
-
-
-# ============================================================
-# PLOT 1
-# ACTUAL VS PREDICTED Z
-# ============================================================
 
 plt.figure(
     figsize=(12, 5)
@@ -706,12 +465,6 @@ plt.tight_layout()
 
 plt.show()
 
-
-# ============================================================
-# PLOT 2
-# 3D PREDICTION ERROR
-# ============================================================
-
 plt.figure(
     figsize=(12, 5)
 )
@@ -746,12 +499,6 @@ plt.grid(True)
 plt.tight_layout()
 
 plt.show()
-
-
-# ============================================================
-# PLOT 3
-# ACTUAL VS PREDICTED Z SCATTER
-# ============================================================
 
 plt.figure(
     figsize=(7, 7)
@@ -799,11 +546,6 @@ plt.tight_layout()
 
 plt.show()
 
-
-# ============================================================
-# FINAL COMPARISON
-# ============================================================
-
 print()
 print("=" * 60)
 print("MODEL COMPARISON")
@@ -820,7 +562,6 @@ print(
     f"Respiratory-informed P95:      "
     f"{p95_error:.4f} mm"
 )
-
 
 if p95_error < KALMAN_P95:
 
@@ -849,11 +590,6 @@ else:
         f"\nRESULT: Kalman baseline is "
         f"BETTER by {difference:.4f} mm."
     )
-
-
-# ============================================================
-# OUTPUT
-# ============================================================
 
 print()
 print("=" * 60)

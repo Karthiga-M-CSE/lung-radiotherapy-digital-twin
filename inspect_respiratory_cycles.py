@@ -2,14 +2,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
-# --------------------------------------------------
-# PATH
-# --------------------------------------------------
 RPM_FILE = r"C:\Users\smk28\Downloads\DATASET1\data\rpm_signal.txt"
 
-# --------------------------------------------------
-# LOAD RPM
-# --------------------------------------------------
 rpm = np.loadtxt(RPM_FILE)
 
 print("=" * 60)
@@ -20,11 +14,6 @@ print(f"\nTotal RPM samples: {len(rpm)}")
 print(f"Minimum RPM value: {rpm.min():.4f}")
 print(f"Maximum RPM value: {rpm.max():.4f}")
 
-# --------------------------------------------------
-# FIND RESPIRATORY PEAKS
-# --------------------------------------------------
-# We expect roughly 18 respiratory cycles across 182 samples.
-# Distance prevents multiple peaks within the same cycle.
 peaks, properties = find_peaks(
     rpm,
     distance=6,
@@ -35,9 +24,6 @@ print(f"\nDetected respiratory peaks: {len(peaks)}")
 print("Peak frame indices:")
 print(peaks.tolist())
 
-# --------------------------------------------------
-# FIND RESPIRATORY VALLEYS
-# --------------------------------------------------
 valleys, _ = find_peaks(
     -rpm,
     distance=6,
@@ -48,10 +34,6 @@ print(f"\nDetected respiratory valleys: {len(valleys)}")
 print("Valley frame indices:")
 print(valleys.tolist())
 
-# --------------------------------------------------
-# BUILD CYCLE RANGES
-# --------------------------------------------------
-# Consecutive peaks define approximately one respiratory cycle.
 cycles = []
 
 for i in range(len(peaks) - 1):
@@ -73,9 +55,6 @@ print("=" * 60)
 
 print(cycle_df.to_string(index=False))
 
-# --------------------------------------------------
-# PROPOSE TRAIN / TEST SPLIT
-# --------------------------------------------------
 if len(cycle_df) >= 10:
 
     test_cycles = max(4, int(round(len(cycle_df) * 0.25)))
@@ -97,9 +76,6 @@ if len(cycle_df) >= 10:
     print("\nIMPORTANT:")
     print("The model must NEVER be fitted using the test-cycle data.")
 
-# --------------------------------------------------
-# SAVE
-# --------------------------------------------------
 OUTPUT = r"C:\Users\smk28\Downloads\DATASET1\data\respiratory_cycle_boundaries.csv"
 
 cycle_df.to_csv(OUTPUT, index=False)
