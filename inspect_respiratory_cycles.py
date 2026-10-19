@@ -2,7 +2,13 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
-RPM_FILE = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\rpm_signal.txt"
+from src.config import resolve_file, PROJECT_ROOT, OUTPUTS_DIR
+from src.utils.logging import get_logger
+
+logger = get_logger("inspect_respiratory_cycles")
+
+RPM_FILE = resolve_file("rpm_signal.txt")
+OUTPUT = resolve_file("respiratory_cycle_boundaries.csv", preferred_dir=PROJECT_ROOT)
 
 rpm = np.loadtxt(RPM_FILE)
 
@@ -56,7 +62,6 @@ print("=" * 60)
 print(cycle_df.to_string(index=False))
 
 if len(cycle_df) >= 10:
-
     test_cycles = max(4, int(round(len(cycle_df) * 0.25)))
     train_cycles = len(cycle_df) - test_cycles
 
@@ -64,8 +69,8 @@ if len(cycle_df) >= 10:
     print("PROPOSED TEMPORAL SPLIT")
     print("=" * 60)
 
-    print(f"\nTraining cycles: 1–{train_cycles}")
-    print(f"Testing cycles : {train_cycles + 1}–{len(cycle_df)}")
+    print(f"\nTraining cycles: 1-{train_cycles}")
+    print(f"Testing cycles : {train_cycles + 1}-{len(cycle_df)}")
 
     train_end = cycle_df.iloc[train_cycles - 1]["end_frame"]
     test_start = cycle_df.iloc[train_cycles]["start_frame"]
@@ -76,9 +81,8 @@ if len(cycle_df) >= 10:
     print("\nIMPORTANT:")
     print("The model must NEVER be fitted using the test-cycle data.")
 
-OUTPUT = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\respiratory_cycle_boundaries.csv"
-
 cycle_df.to_csv(OUTPUT, index=False)
+cycle_df.to_csv(OUTPUTS_DIR / "respiratory_cycle_boundaries.csv", index=False)
 
 print(f"\nSaved cycle information to:")
 print(OUTPUT)

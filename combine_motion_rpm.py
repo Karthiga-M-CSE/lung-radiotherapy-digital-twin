@@ -1,166 +1,72 @@
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-DATASET_DIR = Path(
-    r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
-)
+from src.config import resolve_file, PROJECT_ROOT, OUTPUTS_DIR
+from src.data.trajectory import combine_trajectory_with_respiratory, validate_trajectory_against_respiratory
+from src.utils.logging import get_logger
 
-TRAJECTORY_FILE = DATASET_DIR / "tumor_trajectory.csv"
+logger = get_logger("combine_motion_rpm")
 
-RPM_FILE = DATASET_DIR / "rpm_signal.txt"
+TRAJECTORY_FILE = resolve_file("tumor_trajectory.csv")
+RPM_FILE = resolve_file("rpm_signal.txt")
+OUTPUT_FILE = resolve_file("tumor_motion_with_rpm.csv", preferred_dir=PROJECT_ROOT)
 
-OUTPUT_FILE = DATASET_DIR / "tumor_motion_with_rpm.csv"
 
-if not TRAJECTORY_FILE.exists():
-    raise FileNotFoundError(
-        f"Trajectory file not found:\n{TRAJECTORY_FILE}"
-    )
+def main():
+    if not TRAJECTORY_FILE.exists():
+        raise FileNotFoundError(f"Trajectory file not found:\n{TRAJECTORY_FILE}")
 
-if not RPM_FILE.exists():
-    raise FileNotFoundError(
-        f"RPM signal file not found:\n{RPM_FILE}"
-    )
+    if not RPM_FILE.exists():
+        raise FileNotFoundError(f"RPM signal file not found:\n{RPM_FILE}")
 
-trajectory = pd.read_csv(TRAJECTORY_FILE)
+    trajectory = pd.read_csv(TRAJECTORY_FILE)
+    print("=" * 60)
+    print("LOADING XCAT MOTION DATA")
+    print("=" * 60)
+    print(f"\nTrajectory rows: {len(trajectory)}")
 
-print("=" * 60)
-print("LOADING XCAT MOTION DATA")
-print("=" * 60)
+    rpm = np.loadtxt(RPM_FILE)
+    print(f"RPM samples: {len(rpm)}")
 
-print(f"\nTrajectory rows: {len(trajectory)}")
+    if len(trajectory) != len(rpm):
+        raise ValueError(
+            "Trajectory and RPM signal have different lengths!\n"
+            f"Trajectory: {len(trajectory)}\n"
+            f"RPM: {len(rpm)}"
+        )
 
-rpm = np.loadtxt(RPM_FILE)
+    trajectory = combine_trajectory_with_respiratory(trajectory, rpm, rpm_col="rpm", validate=True)
+    validation = validate_trajectory_against_respiratory(trajectory, rpm)
 
-print(f"RPM samples: {len(rpm)}")
+    trajectory.to_csv(OUTPUT_FILE, index=False)
+    trajectory.to_csv(OUTPUTS_DIR / "tumor_motion_with_rpm.csv", index=False)
 
-if len(trajectory) != len(rpm):
+    print("\n" + "=" * 60)
+    print("RESPIRATORY SIGNAL")
+    print("=" * 60)
+    print(f"\nRPM minimum: {rpm.min():.3f}")
+    print(f"RPM maximum: {rpm.max():.3f}")
+    print(f"RPM mean: {rpm.mean():.3f}")
+    print(f"RPM standard deviation: {rpm.std():.3f}")
 
-    raise ValueError(
-        "Trajectory and RPM signal have different lengths!\n"
-        f"Trajectory: {len(trajectory)}\n"
-        f"RPM: {len(rpm)}"
-    )
+    print("\n" + "=" * 60)
+    print("COMBINED DATA")
+    print("=" * 60)
+    cols_to_show = [c for c in ["frame", "x_mm", "y_mm", "z_mm", "displacement_3d_mm", "rpm"] if c in trajectory.columns]
+    print(trajectory[cols_to_show].head(10).to_string(index=False))
 
-trajectory["rpm"] = rpm
+    correlation = trajectory["rpm"].corr(trajectory["z_mm"])
+    print("\n" + "=" * 60)
+    print("RESPIRATION-MOTION RELATIONSHIP")
+    print("=" * 60)
+    print(f"\nPearson correlation between RPM signal and tumor Z position: {correlation:.4f}")
+    print(f"Validation Summary:\n{validation.summary()}")
+    print("\n" + "=" * 60)
+    print(f"COMBINED CSV SAVED:\n{OUTPUT_FILE}")
+    print("=" * 60)
 
-trajectory.to_csv(
-    OUTPUT_FILE,
-    index=False
-)
 
-print("\n")
-print("=" * 60)
-print("RESPIRATORY SIGNAL")
-print("=" * 60)
-
-print(
-    f"\nRPM minimum: {rpm.min():.3f}"
-)
-
-print(
-    f"RPM maximum: {rpm.max():.3f}"
-)
-
-print(
-    f"RPM mean: {rpm.mean():.3f}"
-)
-
-print(
-    f"RPM standard deviation: {rpm.std():.3f}"
-)
-
-print("\n")
-print("=" * 60)
-print("COMBINED DATA")
-print("=" * 60)
-
-print(
-    trajectory[
-        [
-            "frame",
-            "x_mm",
-            "y_mm",
-            "z_mm",
-            "displacement_3d_mm",
-            "rpm"
-        ]
-    ].head(10).to_string(index=False)
-)
-
-plt.figure(figsize=(12, 5))
-
-plt.plot(
-    trajectory["frame"],
-    trajectory["z_mm"]
-)
-
-plt.xlabel("Frame")
-plt.ylabel("Tumor Z Position (mm)")
-plt.title("XCAT Tumor Z-Position Across Respiratory Samples")
-
-plt.grid(True)
-
-plt.tight_layout()
-
-plt.show()
-
-plt.figure(figsize=(12, 5))
-
-plt.plot(
-    trajectory["frame"],
-    trajectory["rpm"]
-)
-
-plt.xlabel("Frame")
-plt.ylabel("Respiratory Signal")
-plt.title("XCAT Respiratory Signal")
-
-plt.grid(True)
-
-plt.tight_layout()
-
-plt.show()
-
-plt.figure(figsize=(7, 6))
-
-plt.scatter(
-    trajectory["rpm"],
-    trajectory["z_mm"]
-)
-
-plt.xlabel("Respiratory Signal")
-plt.ylabel("Tumor Z Position (mm)")
-plt.title("Tumor Z Position vs Respiratory Signal")
-
-plt.grid(True)
-
-plt.tight_layout()
-
-plt.show()
-
-correlation = trajectory["rpm"].corr(
-    trajectory["z_mm"]
-)
-
-print("\n")
-print("=" * 60)
-print("RESPIRATION–MOTION RELATIONSHIP")
-print("=" * 60)
-
-print(
-    f"\nPearson correlation between "
-    f"RPM signal and tumor Z position: "
-    f"{correlation:.4f}"
-)
-
-print("\n")
-print("=" * 60)
-
-print("COMBINED CSV SAVED:")
-
-print(OUTPUT_FILE)
-
-print("=" * 60)
+if __name__ == "__main__":
+    main()

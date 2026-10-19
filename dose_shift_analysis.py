@@ -1,12 +1,32 @@
 import pydicom
 import numpy as np
 
-sfile = r"C:\Users\smk28\Downloads\Center2\Center 2\structureSetFiles\RTSTRUCT_V15_QA_FH_20240708\9999.144874522247533734992787435849309847299"
+import os
+from pathlib import Path
 
-dfile = r"C:\Users\smk28\Downloads\Center2\Center 2\doseFiles\RTDOSE_EclipseDosen_20240708\9999.74820833721338163423465608981710622482"
+from src.config import RTSTRUCT_FILE, RTDOSE_FILE
+from src.utils.logging import get_logger
 
-S = pydicom.dcmread(sfile)
-D = pydicom.dcmread(dfile)
+logger = get_logger("dose_shift_analysis")
+
+sfile = RTSTRUCT_FILE
+dfile = RTDOSE_FILE
+
+if not Path(sfile).exists() or not Path(dfile).exists():
+    print("=" * 60)
+    print("DOSIMETRIC SHIFT ANALYSIS - DICOM INPUT REQUIRED")
+    print("=" * 60)
+    print(f"RTSTRUCT Path : {sfile} (Exists: {Path(sfile).exists()})")
+    print(f"RTDOSE Path   : {dfile} (Exists: {Path(dfile).exists()})")
+    print("\nTo specify DICOM inputs, set the environment variables:")
+    print("  set RTSTRUCT_PATH=<path_to_rtstruct.dcm>")
+    print("  set RTDOSE_PATH=<path_to_rtdose.dcm>")
+    print("\nSkipping dosimetric calculation as sample DICOM files are not present.")
+    print("=" * 60)
+    raise SystemExit(0)
+
+S = pydicom.dcmread(str(sfile))
+D = pydicom.dcmread(str(dfile))
 
 dose = D.pixel_array.astype(float) * float(D.DoseGridScaling)
 

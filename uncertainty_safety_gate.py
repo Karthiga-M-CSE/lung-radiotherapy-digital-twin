@@ -3,11 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-INPUT_FILE = Path(
-    r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\respiratory_heldout_test_results.csv"
-)
+from src.config import resolve_file, OUTPUTS_DIR, PROJECT_ROOT
+from src.utils.logging import get_logger
 
-OUTPUT_FILE = INPUT_FILE.parent / "uncertainty_safety_gate_results.csv"
+logger = get_logger("uncertainty_safety_gate")
+
+INPUT_FILE = resolve_file("respiratory_heldout_test_results.csv")
+OUTPUT_FILE = resolve_file("uncertainty_safety_gate_results.csv", preferred_dir=PROJECT_ROOT)
 
 df = pd.read_csv(INPUT_FILE)
 
@@ -161,13 +163,9 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
 
-plot1 = (
-    INPUT_FILE.parent /
-    "prediction_error_safety_gate.png"
-)
-
+plot1 = PROJECT_ROOT / "prediction_error_safety_gate.png"
 plt.savefig(plot1, dpi=300)
-plt.show()
+plt.savefig(OUTPUTS_DIR / "prediction_error_safety_gate.png", dpi=300)
 
 plt.figure(figsize=(9, 5))
 
@@ -193,13 +191,9 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
 
-plot2 = (
-    INPUT_FILE.parent /
-    "prediction_error_distribution.png"
-)
-
+plot2 = PROJECT_ROOT / "prediction_error_distribution.png"
 plt.savefig(plot2, dpi=300)
-plt.show()
+plt.savefig(OUTPUTS_DIR / "prediction_error_distribution.png", dpi=300)
 
 print("\nPlots saved:")
 print(plot1)

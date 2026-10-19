@@ -8,19 +8,13 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-DATASET_DIR = Path(
-    r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
-)
+from src.config import resolve_file, PROJECT_ROOT, OUTPUTS_DIR, N_LAGS, ALPHA, MIN_TRAINING_SAMPLES
+from src.utils.logging import get_logger
 
-INPUT_FILE = DATASET_DIR / "tumor_motion_with_rpm.csv"
+logger = get_logger("respiratory_motion_prediction")
 
-OUTPUT_FILE = DATASET_DIR / "respiratory_prediction_results.csv"
-
-N_LAGS = 5
-
-MIN_TRAINING_SAMPLES = 50
-
-ALPHA = 1.0
+INPUT_FILE = resolve_file("tumor_motion_with_rpm.csv")
+OUTPUT_FILE = resolve_file("respiratory_prediction_results.csv", preferred_dir=PROJECT_ROOT)
 
 if not INPUT_FILE.exists():
 

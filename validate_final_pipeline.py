@@ -1,15 +1,17 @@
-import pandas as pd
 from pathlib import Path
+import pandas as pd
 
-DATA = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
-PROJECT = Path(r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT")
+from src.config import resolve_file
+from src.utils.logging import get_logger
+
+logger = get_logger("validate_final_pipeline")
 
 FILES = {
-    "ridge": DATA / "respiratory_heldout_test_results.csv",
-    "safety": DATA / "uncertainty_safety_gate_results.csv",
-    "twin": PROJECT / "digital_twin_state.csv",
-    "replanning": PROJECT / "replanning_trigger_results.csv",
-    "comparison": DATA / "heldout_model_comparison.csv",
+    "ridge": resolve_file("respiratory_heldout_test_results.csv"),
+    "safety": resolve_file("uncertainty_safety_gate_results.csv"),
+    "twin": resolve_file("digital_twin_state.csv"),
+    "replanning": resolve_file("replanning_trigger_results.csv"),
+    "comparison": resolve_file("heldout_model_comparison.csv"),
 }
 
 print("=" * 70)
@@ -19,14 +21,14 @@ print("=" * 70)
 dfs = {}
 
 for name, path in FILES.items():
-
     if not path.exists():
         raise FileNotFoundError(
-            f"\nMissing {name} file:\n{path}"
+            f"\nMissing {name} file:\n{path}\n"
+            f"Please run the upstream pipeline scripts to generate this artifact."
         )
 
     dfs[name] = pd.read_csv(path)
-    print(f"\n{name.upper():12} : {len(dfs[name])} rows")
+    print(f"\n{name.upper():12} : {len(dfs[name])} rows (from {path.name})")
 
 ridge = dfs["ridge"]
 safety = dfs["safety"]
@@ -46,26 +48,25 @@ for name, df in [
     ("Digital Twin", twin),
     ("Replanning", replanning),
 ]:
-
     frames = set(df["frame"])
 
     print(
         f"{name:12}: "
-        f"{min(frames)} → {max(frames)} "
+        f"{min(frames)} -> {max(frames)} "
         f"({len(frames)} frames)"
     )
 
     assert frames == EXPECTED_FRAMES, (
-        f"{name} does not contain exactly frames 139–179."
+        f"{name} does not contain exactly frames 139-179."
     )
 
-print("\n✓ All downstream modules use identical 41 held-out frames.")
+print("\n[OK] All downstream modules use identical 41 held-out frames.")
 
 print("\n" + "=" * 70)
 print("RIDGE MODEL VALIDATION")
 print("=" * 70)
 
-ridge_error = ridge["error_3d_mm"]
+ridge_error = ridge["error_3d_mm"] if "error_3d_mm" in ridge.columns else ridge["prediction_error_3d_mm"]
 
 ridge_p95 = ridge_error.quantile(0.95)
 
@@ -74,7 +75,7 @@ print(f"P95 error  : {ridge_p95:.4f} mm")
 
 assert abs(ridge_p95 - 3.4304) < 0.01
 
-print("✓ Final Ridge P95 ≈ 3.4304 mm")
+print("[OK] Final Ridge P95 ~ 3.4304 mm")
 
 print("\n" + "=" * 70)
 print("SAFETY GATE VALIDATION")
@@ -100,7 +101,7 @@ print(f"Review    : {review_count}")
 assert continue_count == 39
 assert review_count == 2
 
-print("✓ Safety Gate = 39 CONTINUE / 2 REVIEW")
+print("[OK] Safety Gate = 39 CONTINUE / 2 REVIEW")
 
 print("\n" + "=" * 70)
 print("DIGITAL TWIN VALIDATION")
@@ -113,7 +114,7 @@ print(f"Mean error: {twin['prediction_error_mm'].mean():.4f} mm")
 
 assert abs(twin_threshold - safety_threshold) < 0.0001
 
-print("✓ Digital Twin uses the same uncertainty threshold.")
+print("[OK] Digital Twin uses the same uncertainty threshold.")
 
 print("\n" + "=" * 70)
 print("REPLANNING VALIDATION")
@@ -133,7 +134,7 @@ print(f"Review flags     : {review_flags}")
 assert deviations == 2
 assert review_flags == 0
 
-print("✓ 2 deviations, but no 3-consecutive-deviation trigger.")
+print("[OK] 2 deviations, but no 3-consecutive-deviation trigger.")
 
 print("\n" + "=" * 70)
 print("MODEL COMPARISON VALIDATION")
@@ -152,14 +153,14 @@ print("FINAL VALIDATION PASSED")
 print("=" * 70)
 
 print("""
-✓ 41 held-out frames
-✓ Ridge predictions consistent
-✓ Safety Gate consistent
-✓ Digital Twin consistent
-✓ Replanning Trigger consistent
-✓ P95 uncertainty = 3.4304 mm
-✓ Safety = 39 CONTINUE / 2 REVIEW
-✓ Replanning review = 0
+[OK] 41 held-out frames
+[OK] Ridge predictions consistent
+[OK] Safety Gate consistent
+[OK] Digital Twin consistent
+[OK] Replanning Trigger consistent
+[OK] P95 uncertainty = 3.4304 mm
+[OK] Safety = 39 CONTINUE / 2 REVIEW
+[OK] Replanning review = 0
 
 The final prediction pipeline is internally consistent.
 """)

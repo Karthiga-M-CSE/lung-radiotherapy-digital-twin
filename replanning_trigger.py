@@ -1,79 +1,49 @@
 import pandas as pd
 
-input_file = "digital_twin_state.csv"
-output_file = "replanning_trigger_results.csv"
+from src.config import resolve_file, PROJECT_ROOT, OUTPUTS_DIR, PERSISTENCE_COUNT
+from src.twin.replanning import evaluate_replanning_persistence
+from src.utils.logging import get_logger
+
+logger = get_logger("replanning_trigger")
+
+input_file = resolve_file("digital_twin_state.csv")
+output_file = resolve_file("replanning_trigger_results.csv", preferred_dir=PROJECT_ROOT)
 
 df = pd.read_csv(input_file)
 
-THRESHOLD_MM = df["uncertainty_bound_mm"].iloc[0]
+df_out, summary = evaluate_replanning_persistence(df, persistence=PERSISTENCE_COUNT)
 
-PERSISTENCE = 3
-
-df["state"] = df["prediction_error_mm"].apply(
-    lambda x: "DEVIATION"
-    if x > THRESHOLD_MM
-    else "STABLE"
-)
-
-df["consecutive_deviations"] = 0
-
-count = 0
-
-for i in range(len(df)):
-
-    if df.loc[i, "state"] == "DEVIATION":
-        count += 1
-    else:
-        count = 0
-
-    df.loc[i, "consecutive_deviations"] = count
-
-df["replanning_review"] = (
-    df["consecutive_deviations"] >= PERSISTENCE
-)
-
-df.to_csv(output_file, index=False)
-
-stable = (
-    df["state"] == "STABLE"
-).sum()
-
-deviation = (
-    df["state"] == "DEVIATION"
-).sum()
-
-reviews = (
-    df["replanning_review"]
-).sum()
+df_out.to_csv(output_file, index=False)
+df_out.to_csv(OUTPUTS_DIR / "replanning_trigger_results.csv", index=False)
 
 print("\n===================================")
 print("      FINAL REPLANNING TRIGGER")
 print("===================================")
 
 print(
-    f"Total predictions       : {len(df)}"
+    f"Total predictions       : {summary['total_frames']}"
 )
 
 print(
-    f"Stable predictions      : {stable}"
+    f"Stable predictions      : {summary['stable_count']}"
 )
 
 print(
-    f"Deviation predictions   : {deviation}"
+    f"Deviation predictions   : {summary['deviation_count']}"
 )
 
 print(
-    f"Replanning review flags : {reviews}"
+    f"Replanning review flags : {summary['replanning_review_count']}"
 )
 
 print(
     f"\nResearch threshold      : "
-    f"{THRESHOLD_MM:.4f} mm"
+    f"{summary['threshold_mm']:.4f} mm"
 )
 
 print(
     f"Persistence requirement : "
-    f"{PERSISTENCE} consecutive deviations"
+    f"{summary['persistence_requirement']} consecutive deviations"
 )
 
 print("\nOutput saved to:")

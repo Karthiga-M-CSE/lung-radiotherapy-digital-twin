@@ -4,12 +4,17 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 
-DATA_DIR = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1"
+from src.config import DATASET_DIR, PROJECT_ROOT, OUTPUTS_DIR
+from src.utils.logging import get_logger
+
+logger = get_logger("layer1_tumor_segmentation")
+
+DATA_DIR = str(DATASET_DIR)
 
 VOLUME_DIR = os.path.join(DATA_DIR, "volumes")
 MASK_DIR = os.path.join(DATA_DIR, "tumor_masks")
 
-OUTPUT_FILE = "tumor_segmentation_results.csv"
+OUTPUT_FILE = str(PROJECT_ROOT / "tumor_segmentation_results.csv")
 
 volume_files = sorted(
     glob.glob(os.path.join(VOLUME_DIR, "volume_*.nii.gz")),
