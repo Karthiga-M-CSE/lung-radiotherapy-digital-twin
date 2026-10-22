@@ -27,6 +27,18 @@ class ModelEvaluationMetrics:
     p95_x: float
     p95_y: float
     p95_z: float
+    p90_x: float = 0.0
+    p90_y: float = 0.0
+    p90_z: float = 0.0
+    p99_x: float = 0.0
+    p99_y: float = 0.0
+    p99_z: float = 0.0
+    rmse_x: float = 0.0
+    rmse_y: float = 0.0
+    rmse_z: float = 0.0
+    mae_x: float = 0.0
+    mae_y: float = 0.0
+    mae_z: float = 0.0
 
     def to_dict(self) -> Dict[str, Union[str, int, float]]:
         return {
@@ -43,9 +55,21 @@ class ModelEvaluationMetrics:
             "mean_x_mm": self.mean_x,
             "mean_y_mm": self.mean_y,
             "mean_z_mm": self.mean_z,
+            "mae_x_mm": self.mae_x or self.mean_x,
+            "mae_y_mm": self.mae_y or self.mean_y,
+            "mae_z_mm": self.mae_z or self.mean_z,
+            "rmse_x_mm": self.rmse_x,
+            "rmse_y_mm": self.rmse_y,
+            "rmse_z_mm": self.rmse_z,
+            "p90_x_mm": self.p90_x,
+            "p90_y_mm": self.p90_y,
+            "p90_z_mm": self.p90_z,
             "p95_x_mm": self.p95_x,
             "p95_y_mm": self.p95_y,
             "p95_z_mm": self.p95_z,
+            "p99_x_mm": self.p99_x,
+            "p99_y_mm": self.p99_y,
+            "p99_z_mm": self.p99_z,
         }
 
 
@@ -138,6 +162,18 @@ def evaluate_model_predictions(
         p95_x=float(err_dict["p95_x"]),
         p95_y=float(err_dict["p95_y"]),
         p95_z=float(err_dict["p95_z"]),
+        p90_x=float(err_dict.get("p90_x", 0.0)),
+        p90_y=float(err_dict.get("p90_y", 0.0)),
+        p90_z=float(err_dict.get("p90_z", 0.0)),
+        p99_x=float(err_dict.get("p99_x", 0.0)),
+        p99_y=float(err_dict.get("p99_y", 0.0)),
+        p99_z=float(err_dict.get("p99_z", 0.0)),
+        rmse_x=float(err_dict.get("rmse_x", 0.0)),
+        rmse_y=float(err_dict.get("rmse_y", 0.0)),
+        rmse_z=float(err_dict.get("rmse_z", 0.0)),
+        mae_x=float(err_dict.get("mae_x", err_dict["mean_x"])),
+        mae_y=float(err_dict.get("mae_y", err_dict["mean_y"])),
+        mae_z=float(err_dict.get("mae_z", err_dict["mean_z"])),
     )
 
     return df_results, metrics

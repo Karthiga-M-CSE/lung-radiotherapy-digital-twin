@@ -1,6 +1,11 @@
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 
+from src.models.conformal import (
+    ConformalCoverageReport,
+    ConformalIntervals,
+    SplitConformalPredictor,
+)
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -9,9 +14,13 @@ logger = get_logger(__name__)
 def evaluate_safety_gate(
     errors_3d: np.ndarray,
     threshold_percentile: float = 95.0,
-    preset_threshold: float = None
+    preset_threshold: Optional[float] = None,
 ) -> Tuple[float, np.ndarray, Dict[str, Any]]:
-    threshold_mm = preset_threshold if preset_threshold is not None else float(np.percentile(errors_3d, threshold_percentile))
+    threshold_mm = (
+        preset_threshold
+        if preset_threshold is not None
+        else float(np.percentile(errors_3d, threshold_percentile))
+    )
 
     status = np.where(errors_3d <= threshold_mm, "SAFE / CONTINUE", "FLAG / REVIEW")
     safe_count = int(np.sum(status == "SAFE / CONTINUE"))
@@ -38,3 +47,24 @@ def evaluate_safety_gate(
         f"REVIEW={flag_count} ({summary['flag_pct']:.1f}%)"
     )
     return threshold_mm, status, summary
+
+
+def evaluate_conformal_safety_gate(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    conformal_predictor: SplitConformalPredictor,
+    alpha: float = 0.05,
+) -> Tuple[ConformalCoverageReport, np.ndarray, Dict[str, Any]]:
+    report = conformal_predictor.evaluate_coverage(y_true, y_pred, alpha=alpha)
+    diff = np.linalg.norm(np.asarray(y_true) - np.asarray(y_pred), axis=-1)
+    status = np.where(diff <= report.radius_3d_mm, "SAFE / CONTINUE", "FLAG / REVIEW")
+
+    summary = {
+        "conformal_radius_3d_mm": report.radius_3d_mm,
+        "target_coverage": report.target_coverage,
+        "empirical_coverage_3d": report.coverage_3d,
+        "is_valid_coverage": report.is_valid,
+        "safe_count": int(np.sum(status == "SAFE / CONTINUE")),
+        "flag_count": int(np.sum(status == "FLAG / REVIEW")),
+    }
+    return report, status, summary
