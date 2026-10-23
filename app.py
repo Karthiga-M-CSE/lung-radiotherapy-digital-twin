@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import tempfile
 import os
 
+from src.config import RESEARCH_P95_THRESHOLD_MM
+
 st.set_page_config(page_title="Predictive Digital Twin", layout="wide", initial_sidebar_state="expanded")
 
 # --- SIDEBAR CONFIGURATION ---
@@ -116,7 +118,7 @@ displacement_voxel = np.array([tumor_x, tumor_y, tumor_z]) - reference_center
 voxel_spacing_mm = np.array([3.0, 3.0, 3.0])
 displacement_mm = displacement_voxel * voxel_spacing_mm
 motion_magnitude = np.linalg.norm(displacement_mm)
-RESEARCH_THRESHOLD_MM = 3.4304
+RESEARCH_THRESHOLD_MM = RESEARCH_P95_THRESHOLD_MM
 
 # Simulated Dose Computation
 xx, yy = np.meshgrid(np.arange(current_ct.shape[0]), np.arange(current_ct.shape[1]), indexing="ij")

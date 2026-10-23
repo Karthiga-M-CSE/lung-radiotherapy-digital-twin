@@ -1,7 +1,8 @@
 from pathlib import Path
 
-DATASET_DIR = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
+from src.config import DATASET_DIR
 
+print("Dataset directory:", DATASET_DIR)
 print("Dataset exists:", DATASET_DIR.exists())
 
 if DATASET_DIR.exists():
@@ -23,4 +24,4 @@ if DATASET_DIR.exists():
     for f in masks[:5]:
         print(" -", f.name)
 else:
-    print("\n❌ Python cannot find the dataset.")
+    print("\n[ERROR] Dataset directory not found.")

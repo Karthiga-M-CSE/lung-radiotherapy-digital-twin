@@ -2,7 +2,7 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-DATASET_DIR = Path(r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1")
+from src.config import DATASET_DIR
 
 volume_path = DATASET_DIR / "volumes" / "volume_0.nii.gz"
 mask_path = DATASET_DIR / "tumor_masks" / "tumormask_0.nii.gz"

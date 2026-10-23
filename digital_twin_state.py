@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
 
-prediction_file = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\respiratory_heldout_test_results.csv"
+from src.config import resolve_file, PROJECT_ROOT, OUTPUTS_DIR
+from src.twin.state import build_digital_twin_dataframe
+from src.utils.logging import get_logger
 
-safety_gate_file = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\uncertainty_safety_gate_results.csv"
+logger = get_logger("digital_twin_state")
 
-output_file = r"C:\Users\smk28\Downloads\RADIOTHERAPY SHIT\digital_twin_state.csv"
+prediction_file = resolve_file("respiratory_heldout_test_results.csv")
+safety_gate_file = resolve_file("uncertainty_safety_gate_results.csv")
+output_file = resolve_file("digital_twin_state.csv", preferred_dir=PROJECT_ROOT)
 
 df = pd.read_csv(prediction_file)
 
@@ -18,41 +22,11 @@ safety = pd.read_csv(safety_gate_file)
 print()
 print("Safety-gate rows:", len(safety))
 
-if not df["frame"].equals(safety["frame"]):
-    raise ValueError(
-        "Prediction and safety-gate frames do not match."
-    )
-
-P95_UNCERTAINTY_MM = safety["uncertainty_bound_mm"].iloc[0]
-
-twin = pd.DataFrame()
-
-twin["frame"] = df["frame"]
-
-twin["actual_x_mm"] = df["actual_x_mm"]
-twin["actual_y_mm"] = df["actual_y_mm"]
-twin["actual_z_mm"] = df["actual_z_mm"]
-
-twin["predicted_x_mm"] = df["predicted_x_mm"]
-twin["predicted_y_mm"] = df["predicted_y_mm"]
-twin["predicted_z_mm"] = df["predicted_z_mm"]
-
-twin["prediction_error_mm"] = df["error_3d_mm"]
-
-twin["uncertainty_bound_mm"] = P95_UNCERTAINTY_MM
-
-twin["safety_status"] = safety["safety_status"].map({
-    "SAFE / CONTINUE": "CONTINUE",
-    "FLAG / REVIEW": "REVIEW"
-})
-
-twin["predicted_motion_magnitude_mm"] = np.sqrt(
-    twin["predicted_x_mm"] ** 2
-    + twin["predicted_y_mm"] ** 2
-    + twin["predicted_z_mm"] ** 2
-)
+twin = build_digital_twin_dataframe(df, safety)
+P95_UNCERTAINTY_MM = twin["uncertainty_bound_mm"].iloc[0]
 
 twin.to_csv(output_file, index=False)
+twin.to_csv(OUTPUTS_DIR / "digital_twin_state.csv", index=False)
 
 print()
 print("========================================")
@@ -81,10 +55,11 @@ print()
 print("Frame range:")
 print(
     int(twin["frame"].min()),
-    "→",
+    "->",
     int(twin["frame"].max())
 )
 
 print()
 print("Saved:")
 print(output_file)
+print("========================================\n")

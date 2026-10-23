@@ -2,87 +2,65 @@ import os
 import numpy as np
 import pandas as pd
 
-INPUT_FILE = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\tumor_motion_with_rpm.csv"
-OUTPUT_FILE = r"C:\Users\gayu0\OneDrive\Desktop\projects\DATASET1\kalman_prediction_results.csv"
+from src.config import (
+    resolve_file,
+    PROJECT_ROOT,
+    OUTPUTS_DIR,
+    KALMAN_DT,
+    KALMAN_PROCESS_NOISE_VAR,
+    KALMAN_MEASUREMENT_NOISE_VAR,
+)
+from src.models.kalman_filter import ConstantVelocityKalmanFilter
+from src.models.evaluation import evaluate_model_predictions
+from src.utils.logging import get_logger
 
-df = pd.read_csv(INPUT_FILE)
+logger = get_logger("kalman_motion_predictor")
 
-positions = df[["x_mm", "y_mm", "z_mm"]].values.astype(float)
+INPUT_FILE = resolve_file("tumor_motion_with_rpm.csv")
+OUTPUT_FILE = resolve_file("kalman_prediction_results.csv", preferred_dir=PROJECT_ROOT)
 
-dt = 1.0
-state = np.zeros(6)
-state[:3] = positions[0]
 
-P = np.eye(6)
-Q = np.eye(6) * 0.01
-R = np.eye(3) * 0.5
+def main():
+    if not os.path.exists(INPUT_FILE):
+        raise FileNotFoundError(f"Input file not found:\n{INPUT_FILE}")
 
-H = np.zeros((3, 6))
-H[0, 0] = 1
-H[1, 1] = 1
-H[2, 2] = 1
+    df = pd.read_csv(INPUT_FILE)
+    positions = df[["x_mm", "y_mm", "z_mm"]].values.astype(float)
+    frames = df["frame"].values
 
-F = np.eye(6)
-F[0, 3] = dt
-F[1, 4] = dt
-F[2, 5] = dt
+    kf = ConstantVelocityKalmanFilter(
+        dt=KALMAN_DT,
+        q_var=KALMAN_PROCESS_NOISE_VAR,
+        r_var=KALMAN_MEASUREMENT_NOISE_VAR,
+    )
 
-predictions = []
-errors = []
+    results = kf.predict_sequence(positions, frames=frames)
 
-for i in range(1, len(positions)):
-    predicted_state = F @ state
-    predicted_covariance = F @ P @ F.T + Q
+    # Save to project root and outputs directory for consistency
+    results.to_csv(OUTPUT_FILE, index=False)
+    results.to_csv(OUTPUTS_DIR / "kalman_prediction_results.csv", index=False)
 
-    predicted_position = predicted_state[:3]
-    actual_position = positions[i]
+    actual = results[["actual_x_mm", "actual_y_mm", "actual_z_mm"]].values
+    predicted = results[["predicted_x_mm", "predicted_y_mm", "predicted_z_mm"]].values
+    _, metrics = evaluate_model_predictions(actual, predicted, frames=results["frame"].values, model_name="Kalman")
 
-    error_vector = actual_position - predicted_position
-    error_3d = np.linalg.norm(error_vector)
+    print("\n" + "=" * 60)
+    print("CONSTANT-VELOCITY KALMAN MOTION PREDICTION")
+    print("=" * 60)
+    print(f"\nFrames processed: {len(positions)}")
+    print("\nONE-STEP-AHEAD 3D PREDICTION ERROR")
+    print(f"Mean error:    {metrics.mean_3d:.4f} mm")
+    print(f"Median error:  {metrics.median_3d:.4f} mm")
+    print(f"P90 error:     {metrics.p90_3d:.4f} mm")
+    print(f"P95 error:     {metrics.p95_3d:.4f} mm")
+    print(f"P99 error:     {metrics.p99_3d:.4f} mm")
+    print(f"Maximum error: {metrics.max_3d:.4f} mm")
 
-    predictions.append({
-        "frame": df.iloc[i]["frame"],
-        "actual_x_mm": actual_position[0],
-        "actual_y_mm": actual_position[1],
-        "actual_z_mm": actual_position[2],
-        "predicted_x_mm": predicted_position[0],
-        "predicted_y_mm": predicted_position[1],
-        "predicted_z_mm": predicted_position[2],
-        "error_x_mm": error_vector[0],
-        "error_y_mm": error_vector[1],
-        "error_z_mm": error_vector[2],
-        "prediction_error_3d_mm": error_3d
-    })
+    print("\n" + "=" * 60)
+    print("RESULTS SAVED TO:")
+    print(OUTPUT_FILE)
+    print("=" * 60)
 
-    errors.append(error_3d)
 
-    measurement = actual_position
-
-    innovation = measurement - H @ predicted_state
-    innovation_covariance = H @ predicted_covariance @ H.T + R
-    K = predicted_covariance @ H.T @ np.linalg.inv(innovation_covariance)
-
-    state = predicted_state + K @ innovation
-    P = (np.eye(6) - K @ H) @ predicted_covariance
-
-results = pd.DataFrame(predictions)
-results.to_csv(OUTPUT_FILE, index=False)
-
-errors = np.array(errors)
-
-print("\n============================================================")
-print("CONSTANT-VELOCITY KALMAN MOTION PREDICTION")
-print("============================================================")
-print(f"\nFrames processed: {len(positions)}")
-print("\nONE-STEP-AHEAD 3D PREDICTION ERROR")
-print(f"Mean error:    {errors.mean():.4f} mm")
-print(f"Median error:  {np.median(errors):.4f} mm")
-print(f"P90 error:     {np.percentile(errors, 90):.4f} mm")
-print(f"P95 error:     {np.percentile(errors, 95):.4f} mm")
-print(f"P99 error:     {np.percentile(errors, 99):.4f} mm")
-print(f"Maximum error: {errors.max():.4f} mm")
-
-print("\n============================================================")
-print("RESULTS SAVED TO:")
-print(OUTPUT_FILE)
-print("============================================================")
+if __name__ == "__main__":
+    main()
